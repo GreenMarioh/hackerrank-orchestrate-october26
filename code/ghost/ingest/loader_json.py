@@ -1,10 +1,8 @@
 """
-loader_json.py — Loads JSON evidence files into normalized Observations.
+loader_json.py — Loads JSON evidence files into normalized Observations and SnapshotCoverage.
 
-Handles all 28 JSON evidence files across the 3 distinct shapes:
-1. Snapshot bundles: {"exported_at": ..., "snapshots": [{"collection": ..., "data_store": ..., "records": [...]}]}
-2. Single-collection exports: {"captured_at" / "exported_at": ..., "records": [...]}
-3. Service resource exports: {"service_exports": {"account_service": {...}, "analytics_platform": {...}}}
+Handles all 28 JSON evidence files across the 3 distinct shapes.
+Produces SnapshotCoverage for every collection/scope inspected.
 """
 from __future__ import annotations
 
@@ -13,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from ghost.models import Observation, UnparsedEvidenceRecord
+from ghost.models import Observation, SnapshotCoverage, UnparsedEvidenceRecord
 
 
 def _parse_iso(ts_str: str | None) -> datetime | None:
@@ -79,13 +77,11 @@ def _infer_system_and_category(system_hint: str | None, collection_hint: str | N
 
 def _normalize_record_fields(rec: dict[str, Any]) -> dict[str, Any]:
     fields = dict(rec)
-    # Extract nested fields if document / profile exists
     if "profile" in rec and isinstance(rec["profile"], dict):
         fields.update(rec["profile"])
     if "document" in rec and isinstance(rec["document"], dict):
         fields.update(rec["document"])
 
-    # Unify identifiers
     uid = (
         fields.get("user_id")
         or fields.get("customer_reference")
@@ -126,15 +122,16 @@ def load_json_evidence(
     file_path: Path,
     file_id: str,
     manifest_captured_at: datetime,
-) -> tuple[list[Observation], list[UnparsedEvidenceRecord]]:
+) -> tuple[list[Observation], list[SnapshotCoverage], list[UnparsedEvidenceRecord]]:
     observations: list[Observation] = []
+    coverages: list[SnapshotCoverage] = []
     unparsed: list[UnparsedEvidenceRecord] = []
 
     try:
         data = json.loads(file_path.read_text(encoding="utf-8"))
     except Exception as exc:
         unparsed.append(UnparsedEvidenceRecord(file_id, str(file_path), "JSON parse error", str(exc)))
-        return observations, unparsed
+        return observations, coverages, unparsed
 
     file_captured_at = (
         _parse_iso(data.get("captured_at"))
@@ -152,11 +149,16 @@ def load_json_evidence(
             snap_time = _parse_iso(snap.get("captured_at")) or file_captured_at
             records = snap.get("records", [])
 
+            snap_rids: set[str] = set()
+            snap_sys, _ = _infer_system_and_category(data_store, collection, "")
+
             for r_idx, rec in enumerate(records):
                 if not isinstance(rec, dict):
                     continue
                 rid = rec.get("resource_id") or f"{collection}_{r_idx}"
+                snap_rids.add(rid)
                 system_id, category = _infer_system_and_category(data_store, collection, rid)
+                snap_sys = system_id
                 fields = _normalize_record_fields(rec)
                 obs_id = f"{file_id}:{collection}:{rid}:{r_idx}"
 
@@ -174,6 +176,17 @@ def load_json_evidence(
                     )
                 )
 
+            coverages.append(
+                SnapshotCoverage(
+                    file_id=file_id,
+                    captured_at=snap_time,
+                    system_id=snap_sys,
+                    store="export",
+                    scope_name=collection,
+                    resource_ids=frozenset(snap_rids),
+                )
+            )
+
     # Shape 2: Service resource exports (data["service_exports"])
     elif isinstance(data, dict) and "service_exports" in data and isinstance(data["service_exports"], dict):
         for svc_name, svc_data in data["service_exports"].items():
@@ -182,11 +195,16 @@ def load_json_evidence(
             for coll_name, records in svc_data.items():
                 if not isinstance(records, list):
                     continue
+                coll_rids: set[str] = set()
+                coll_sys, _ = _infer_system_and_category(svc_name, coll_name, "")
+
                 for r_idx, rec in enumerate(records):
                     if not isinstance(rec, dict):
                         continue
                     rid = rec.get("resource_id") or f"{coll_name}_{r_idx}"
+                    coll_rids.add(rid)
                     system_id, category = _infer_system_and_category(svc_name, coll_name, rid)
+                    coll_sys = system_id
                     fields = _normalize_record_fields(rec)
                     rec_time = _parse_iso(rec.get("observed_at")) or file_captured_at
                     obs_id = f"{file_id}:{svc_name}:{coll_name}:{rid}:{r_idx}"
@@ -205,15 +223,32 @@ def load_json_evidence(
                         )
                     )
 
+                coverages.append(
+                    SnapshotCoverage(
+                        file_id=file_id,
+                        captured_at=file_captured_at,
+                        system_id=coll_sys,
+                        store="export",
+                        scope_name=f"{svc_name}.{coll_name}",
+                        resource_ids=frozenset(coll_rids),
+                    )
+                )
+
     # Shape 3: Single-collection exports (data["records"])
     elif isinstance(data, dict) and "records" in data and isinstance(data["records"], list):
         collection = data.get("collection") or data.get("source") or data.get("origin") or "records"
+        rec_rids: set[str] = set()
+        rec_sys = data.get("source") or data.get("origin") or "export_service"
+        top_sys, _ = _infer_system_and_category(rec_sys, collection, "")
+
         for r_idx, rec in enumerate(data["records"]):
             if not isinstance(rec, dict):
                 continue
             rid = rec.get("resource_id") or f"{collection}_{r_idx}"
-            rec_sys = rec.get("system") or data.get("source") or data.get("origin")
-            system_id, category = _infer_system_and_category(rec_sys, collection, rid)
+            rec_rids.add(rid)
+            item_sys = rec.get("system") or rec_sys
+            system_id, category = _infer_system_and_category(item_sys, collection, rid)
+            top_sys = system_id
             fields = _normalize_record_fields(rec)
             rec_time = _parse_iso(rec.get("recorded_at")) or file_captured_at
             obs_id = f"{file_id}:{collection}:{rid}:{r_idx}"
@@ -232,10 +267,18 @@ def load_json_evidence(
                 )
             )
 
+        coverages.append(
+            SnapshotCoverage(
+                file_id=file_id,
+                captured_at=file_captured_at,
+                system_id=top_sys,
+                store="export",
+                scope_name=collection,
+                resource_ids=frozenset(rec_rids),
+            )
+        )
+
     else:
         unparsed.append(UnparsedEvidenceRecord(file_id, str(file_path), f"Unknown JSON structure with keys: {list(data.keys())}"))
 
-    if not observations and not unparsed:
-        unparsed.append(UnparsedEvidenceRecord(file_id, str(file_path), "Zero observations produced from JSON file"))
-
-    return observations, unparsed
+    return observations, coverages, unparsed

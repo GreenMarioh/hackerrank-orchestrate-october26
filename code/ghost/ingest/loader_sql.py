@@ -1,8 +1,9 @@
 """
-loader_sql.py — Loads SQL snapshot evidence files into normalized Observations.
+loader_sql.py — Loads SQL snapshot evidence files into normalized Observations and SnapshotCoverage.
 
 Parses table schemas and rows using in-memory sqlite3.
 Handles all 24 SQL evidence files across Family A (account replicas) and Family B (multi-service).
+Produces SnapshotCoverage for every table (including zero-row snapshots like evidence_90).
 """
 from __future__ import annotations
 
@@ -13,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from ghost.models import Observation, UnparsedEvidenceRecord
+from ghost.models import Observation, SnapshotCoverage, UnparsedEvidenceRecord
 
 
 def _parse_iso(ts_str: str | None) -> datetime | None:
@@ -34,7 +35,6 @@ def _parse_iso(ts_str: str | None) -> datetime | None:
             return dt
         except ValueError:
             continue
-    # Try fromisoformat with Z replacement
     try:
         return datetime.fromisoformat(s.replace("Z", "+00:00"))
     except ValueError:
@@ -93,18 +93,19 @@ def load_sql_evidence(
     file_path: Path,
     file_id: str,
     manifest_captured_at: datetime,
-) -> tuple[list[Observation], list[UnparsedEvidenceRecord]]:
+) -> tuple[list[Observation], list[SnapshotCoverage], list[UnparsedEvidenceRecord]]:
     """
-    Parses a single SQL file using sqlite3 in-memory and returns Observations.
+    Parses a single SQL file using sqlite3 in-memory and returns Observations and SnapshotCoverage.
     """
     observations: list[Observation] = []
+    coverages: list[SnapshotCoverage] = []
     unparsed: list[UnparsedEvidenceRecord] = []
 
     try:
         content = file_path.read_text(encoding="utf-8", errors="replace")
     except Exception as exc:
         unparsed.append(UnparsedEvidenceRecord(file_id, str(file_path), "File read error", str(exc)))
-        return observations, unparsed
+        return observations, coverages, unparsed
 
     # Extract capture timestamp from header if present
     captured_at = manifest_captured_at
@@ -130,22 +131,26 @@ def load_sql_evidence(
         if not table_names:
             unparsed.append(UnparsedEvidenceRecord(file_id, str(file_path), "No tables found in SQL file"))
             conn.close()
-            return observations, unparsed
+            return observations, coverages, unparsed
 
         for tbl in table_names:
             if tbl.lower() == "snapshot_scope":
-                # Meta table, not personal data
                 continue
 
             store_type = _detect_store_type(tbl, header_comment)
             rows = cur.execute(f'SELECT * FROM "{tbl}"').fetchall()
 
+            table_rids: set[str] = set()
+            tbl_system_id, _ = _infer_system_and_category(tbl, "")
+
             for idx, row in enumerate(rows):
                 row_dict = dict(row)
                 resource_id = row_dict.get("resource_id") or row_dict.get("id") or f"{tbl}_{idx}"
                 resource_id = str(resource_id).strip()
+                table_rids.add(resource_id)
 
                 system_id, category = _infer_system_and_category(tbl, resource_id)
+                tbl_system_id = system_id
 
                 # Parse row-level capture/update time if available
                 row_time = captured_at
@@ -205,12 +210,21 @@ def load_sql_evidence(
                 )
                 observations.append(obs)
 
+            # Record SnapshotCoverage for this table (even if table_rids is empty, e.g. evidence_90)
+            coverages.append(
+                SnapshotCoverage(
+                    file_id=file_id,
+                    captured_at=captured_at,
+                    system_id=tbl_system_id,
+                    store=store_type,
+                    scope_name=tbl,
+                    resource_ids=frozenset(table_rids),
+                )
+            )
+
         conn.close()
 
     except Exception as exc:
         unparsed.append(UnparsedEvidenceRecord(file_id, str(file_path), "SQL execution error", str(exc)))
 
-    if not observations and not unparsed:
-        unparsed.append(UnparsedEvidenceRecord(file_id, str(file_path), "Zero rows found across all tables"))
-
-    return observations, unparsed
+    return observations, coverages, unparsed

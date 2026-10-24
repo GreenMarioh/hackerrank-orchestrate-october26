@@ -191,7 +191,7 @@ def verify_identities(requests: list[dict[str, str]]) -> dict[str, dict]:
 
     # Historical email coverage
     audit_rows = read_csv(DATASET_DIR / "user_audit_log.csv")
-    email_change_rows = [r for r in audit_rows if r.get("field_changed") == "email"]
+    email_change_rows = [r for r in audit_rows if r.get("field_name") == "email"]
     historical_emails = set()
     for r in email_change_rows:
         historical_emails.add(r.get("old_value", "").strip().lower())
@@ -220,7 +220,7 @@ def verify_audit_log() -> list[dict[str, str]]:
     print(f"  Row count: {len(rows)}")
 
     # Verify every email hash in audit log is explained by a known email
-    email_changes = [r for r in rows if r.get("field_changed") == "email"]
+    email_changes = [r for r in rows if r.get("field_name") == "email"]
     known_emails: set[str] = set()
     for r in read_csv(DATASET_DIR / "user_identities.csv"):
         known_emails.add(r.get("email", "").strip().lower())
@@ -228,7 +228,7 @@ def verify_audit_log() -> list[dict[str, str]]:
         known_emails.add(r.get("old_value", "").strip().lower())
         known_emails.add(r.get("new_value", "").strip().lower())
 
-    hash_rows = [r for r in rows if r.get("field_changed") == "email_hash"]
+    hash_rows = [r for r in rows if r.get("field_name") == "email_hash"]
     unexplained = []
     for r in hash_rows:
         stored = r.get("new_value", "").strip().lower()

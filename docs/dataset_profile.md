@@ -142,119 +142,221 @@ All 11 PNG files are high-resolution internal product and admin console screensh
 
 ---
 
-## §1.5 Sample Resource Linking Signal Table
+## §1.5 Sample Resource Grounded Linking Signals (Regenerated)
 
-Full inventory of all 111 distinct resources across the 32 sample cases, mapping each resource to its cited evidence and the primary signals linking it to the deletion subject:
+Regenerated with real tests: (1) evidence file content contains an alias (current or historical email, user ID, phone, or email hash); (2) activity event time is within the window of reported_at (±120 min) or directly cites an alias.
 
-| Case ID | Resource ID | System ID | Evidence Cited | Primary Linking Signal(s) |
+| Case ID | Resource ID | System ID | Evidence Cited | Grounded Linking Signal(s) |
 |---|---|---|---|---|
-| `case_01` | `account_001` | `account_service` | `evidence_54` | Evidence content (evidence_54); Activity time window |
-| `case_02` | `account_002` | `account_service` | `evidence_54` | Evidence content (evidence_54); Activity time window |
-| `case_03` | `account_7566` | `account_service` | `evidence_94` | Evidence content (evidence_94); Activity time window |
-| `case_03` | `audit_record_2016` | `security_service` | `evidence_94` | Evidence content (evidence_94); Resource bridging / Snapshot scan |
-| `case_03` | `analytics_9406` | `analytics_platform` | `evidence_94` | Evidence content (evidence_94); Activity time window |
-| `case_04` | `account_004` | `account_service` | `evidence_54` | Evidence content (evidence_54); Resource bridging / Snapshot scan |
-| `case_04` | `analytics_901` | `analytics_platform` | `evidence_56` | Evidence content (evidence_56); Activity time window |
-| `case_05` | `account_005` | `account_service` | `evidence_54` | Evidence content (evidence_54); Activity time window |
-| `case_06` | `search_001` | `search_service` | `evidence_57` | Evidence content (evidence_57); Activity time window |
-| `case_06` | `account_006` | `account_service` | `-` | Activity time window |
-| `case_07` | `support_001` | `support_platform` | `evidence_58` | Evidence content (evidence_58); Resource bridging / Snapshot scan |
-| `case_07` | `account_007` | `account_service` | `-` | Activity time window |
-| `case_08` | `export_001` | `export_service` | `evidence_59` | Evidence content (evidence_59); Activity time window |
-| `case_08` | `account_008` | `account_service` | `-` | Activity time window |
-| `case_09` | `backup_4978` | `backup_service` | `evidence_93` | Evidence content (evidence_93); Activity time window |
-| `case_09` | `account_3960` | `account_service` | `-` | Activity time window |
-| `case_09` | `audit_record_4902` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_10` | `support_002` | `support_platform` | `evidence_61` | Evidence content (evidence_61); Activity time window |
-| `case_10` | `account_010` | `account_service` | `-` | Activity time window |
-| `case_11` | `search_052` | `search_service` | `evidence_03` | Evidence content (evidence_03); Activity time window |
-| `case_11` | `analytics_2034` | `analytics_platform` | `evidence_03` | Evidence content (evidence_03); Activity time window |
-| `case_11` | `support_864` | `support_platform` | `evidence_03` | Evidence content (evidence_03); Activity time window |
-| `case_11` | `data_flow_9522` | `integration_service` | `evidence_03` | Evidence content (evidence_03); Activity time window |
-| `case_11` | `account_4248` | `account_service` | `-` | Activity time window |
-| `case_11` | `audit_record_9394` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_12` | `search_012` | `search_service` | `evidence_08` | Evidence content (evidence_08); Activity time window |
-| `case_12` | `account_012` | `account_service` | `-` | Activity time window |
-| `case_12` | `audit_record_2945` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_13` | `support_013` | `support_platform` | `evidence_11` | Evidence content (evidence_11); Activity time window |
-| `case_13` | `account_013` | `account_service` | `-` | Activity time window |
-| `case_13` | `audit_record_4816` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_14` | `export_014` | `export_service` | `evidence_13` | Evidence content (evidence_13); Activity time window |
-| `case_14` | `account_014` | `account_service` | `-` | Activity time window |
-| `case_14` | `audit_record_4159` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_15` | `backup_9410` | `backup_service` | `evidence_05` | Evidence content (evidence_05); Activity time window |
-| `case_15` | `account_4745` | `account_service` | `-` | Activity time window |
-| `case_15` | `audit_record_1596` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_16` | `account_994` | `account_service` | `evidence_05` | Evidence content (evidence_05); Activity time window |
-| `case_16` | `search_1007` | `search_service` | `evidence_05` | Evidence content (evidence_05); Activity time window |
-| `case_16` | `audit_record_9528` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_17` | `backup_3245` | `backup_service` | `evidence_01` | Evidence content (evidence_01); Activity time window |
-| `case_17` | `account_4092` | `account_service` | `-` | Activity time window |
-| `case_17` | `audit_record_1797` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_18` | `search_4013` | `search_service` | `evidence_94` | Evidence content (evidence_94); Activity time window |
-| `case_18` | `analytics_037` | `analytics_platform` | `evidence_94` | Evidence content (evidence_94); Activity time window |
-| `case_18` | `support_5569` | `support_platform` | `evidence_94` | Evidence content (evidence_94); Activity time window |
-| `case_18` | `data_flow_4890` | `integration_service` | `evidence_94` | Evidence content (evidence_94); Activity time window |
-| `case_18` | `account_5521` | `account_service` | `-` | Activity time window |
-| `case_18` | `audit_record_6645` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_19` | `search_6083` | `search_service` | `evidence_01` | Evidence content (evidence_01); Activity time window |
-| `case_19` | `support_9553` | `support_platform` | `evidence_01` | Evidence content (evidence_01); Activity time window |
-| `case_19` | `account_9102` | `account_service` | `-` | Activity time window |
-| `case_19` | `audit_record_6793` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_20` | `search_4262` | `search_service` | `evidence_94` | Evidence content (evidence_94); Activity time window |
-| `case_20` | `data_flow_1770` | `integration_service` | `evidence_94` | Evidence content (evidence_94); Activity time window |
-| `case_20` | `account_5037` | `account_service` | `-` | Activity time window |
-| `case_20` | `audit_record_5569` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_21` | `account_6440` | `account_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_21` | `audit_record_3737` | `security_service` | `evidence_92` | Evidence content (evidence_92); Resource bridging / Snapshot scan |
-| `case_21` | `analytics_5335` | `analytics_platform` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_22` | `search_8911` | `search_service` | `evidence_05` | Evidence content (evidence_05); Activity time window |
-| `case_22` | `analytics_4440` | `analytics_platform` | `evidence_05` | Evidence content (evidence_05); Activity time window |
-| `case_22` | `account_4990` | `account_service` | `-` | Activity time window |
-| `case_22` | `audit_record_3482` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_23` | `export_7364` | `export_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_23` | `search_898` | `search_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_23` | `account_410` | `account_service` | `-` | Activity time window |
-| `case_23` | `audit_record_4128` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_24` | `account_5334` | `account_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_24` | `search_5577` | `search_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_24` | `audit_record_7095` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_25` | `account_3136` | `account_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_25` | `audit_record_451` | `security_service` | `evidence_92` | Evidence content (evidence_92); Resource bridging / Snapshot scan |
-| `case_25` | `analytics_1895` | `analytics_platform` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_26` | `account_5684` | `account_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_26` | `audit_record_5416` | `security_service` | `evidence_92` | Evidence content (evidence_92); Resource bridging / Snapshot scan |
-| `case_26` | `support_4715` | `support_platform` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_26` | `analytics_4566` | `analytics_platform` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_26` | `data_flow_6244` | `integration_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_26` | `backup_3120` | `backup_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_27` | `account_3866` | `account_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_27` | `audit_record_3830` | `security_service` | `evidence_92` | Evidence content (evidence_92); Resource bridging / Snapshot scan |
-| `case_27` | `support_4707` | `support_platform` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_27` | `analytics_4574` | `analytics_platform` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_27` | `data_flow_2295` | `integration_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_27` | `backup_5970` | `backup_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_28` | `account_5482` | `account_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_28` | `audit_record_9265` | `security_service` | `evidence_92` | Evidence content (evidence_92); Resource bridging / Snapshot scan |
-| `case_28` | `support_2351` | `support_platform` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_28` | `analytics_6077` | `analytics_platform` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_28` | `data_flow_2337` | `integration_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_28` | `backup_838` | `backup_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_29` | `search_1993` | `search_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_29` | `analytics_5208` | `analytics_platform` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_29` | `support_5281` | `support_platform` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_29` | `data_flow_3827` | `integration_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_29` | `account_7012` | `account_service` | `-` | Activity time window |
-| `case_29` | `audit_record_3954` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_30` | `search_9359` | `search_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_30` | `analytics_3697` | `analytics_platform` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_30` | `support_6477` | `support_platform` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_30` | `data_flow_8524` | `integration_service` | `evidence_92` | Evidence content (evidence_92); Activity time window |
-| `case_30` | `account_4163` | `account_service` | `-` | Activity time window |
-| `case_30` | `audit_record_1707` | `security_service` | `-` | Resource bridging / Snapshot scan |
-| `case_31` | `account_4857` | `account_service` | `evidence_51` | Evidence content (evidence_51); Activity time window |
-| `case_31` | `audit_record_6909` | `security_service` | `evidence_51` | Evidence content (evidence_51); Resource bridging / Snapshot scan |
-| `case_31` | `tombstone_440` | `identity_service` | `evidence_51` | Evidence content (evidence_51); Activity time window |
-| `case_32` | `tombstone_9178` | `identity_service` | `evidence_51` | Evidence content (evidence_51); Activity time window |
-| `case_32` | `account_8858` | `account_service` | `-` | Activity time window |
-| `case_32` | `audit_record_7068` | `security_service` | `-` | Resource bridging / Snapshot scan |
+| `case_01` | `account_001` | `account_service` | `evidence_54` | Evidence content (evidence_54); Activity window (within 120m of reported_at) |
+| `case_02` | `account_002` | `account_service` | `evidence_54` | Evidence content (evidence_54); Activity window (within 120m of reported_at) |
+| `case_03` | `account_7566` | `account_service` | `evidence_94` | Evidence content (evidence_94 contains alias); Activity window (within 120m of reported_at) |
+| `case_03` | `audit_record_2016` | `security_service` | `evidence_94` | Evidence content (evidence_94 contains alias) |
+| `case_03` | `analytics_9406` | `analytics_platform` | `evidence_94` | Evidence content (evidence_94); Activity window (within 120m of reported_at) |
+| `case_04` | `account_004` | `account_service` | `evidence_54` | Evidence content (evidence_54) |
+| `case_04` | `analytics_901` | `analytics_platform` | `evidence_56` | Evidence content (evidence_56); Activity window (within 120m of reported_at) |
+| `case_05` | `account_005` | `account_service` | `evidence_54` | Evidence content (evidence_54 contains alias); Activity window (within 120m of reported_at) |
+| `case_06` | `search_001` | `search_service` | `evidence_57` | Evidence content (evidence_57 contains alias); Activity window (within 120m of reported_at) |
+| `case_06` | `account_006` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_07` | `support_001` | `support_platform` | `evidence_58` | Evidence content (evidence_58 contains alias) |
+| `case_07` | `account_007` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_08` | `export_001` | `export_service` | `evidence_59` | Evidence content (evidence_59 contains alias); Activity window (within 120m of reported_at) |
+| `case_08` | `account_008` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_09` | `backup_4978` | `backup_service` | `evidence_93` | Evidence content (evidence_93 contains alias); Activity window (within 120m of reported_at) |
+| `case_09` | `account_3960` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_09` | `audit_record_4902` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_10` | `support_002` | `support_platform` | `evidence_61` | Evidence content (evidence_61); Activity window (within 120m of reported_at) |
+| `case_10` | `account_010` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_11` | `search_052` | `search_service` | `evidence_03` | Evidence content (evidence_03 contains alias); Activity window (within 120m of reported_at) |
+| `case_11` | `analytics_2034` | `analytics_platform` | `evidence_03` | Evidence content (evidence_03 contains alias); Activity window (within 120m of reported_at) |
+| `case_11` | `support_864` | `support_platform` | `evidence_03` | Evidence content (evidence_03 contains alias); Activity window (within 120m of reported_at) |
+| `case_11` | `data_flow_9522` | `integration_service` | `evidence_03` | Evidence content (evidence_03 contains alias); Activity window (within 120m of reported_at) |
+| `case_11` | `account_4248` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_11` | `audit_record_9394` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_12` | `analytics_9914` | `analytics_platform` | `evidence_01` | Evidence content (evidence_01 contains alias); Activity window (within 120m of reported_at) |
+| `case_12` | `account_9797` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_12` | `audit_record_2945` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_13` | `search_1308` | `search_service` | `evidence_03` | Evidence content (evidence_03 contains alias); Activity window (within 120m of reported_at) |
+| `case_13` | `support_4218` | `support_platform` | `evidence_03` | Evidence content (evidence_03 contains alias); Activity window (within 120m of reported_at) |
+| `case_13` | `account_9335` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_13` | `audit_record_4816` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_14` | `backup_3870` | `backup_service` | `evidence_03` | Evidence content (evidence_03 contains alias); Activity window (within 120m of reported_at) |
+| `case_14` | `account_3677` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_14` | `audit_record_987` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_15` | `data_flow_9846` | `integration_service` | `evidence_01` | Evidence content (evidence_01); Activity window (within 120m of reported_at) |
+| `case_15` | `account_4745` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_15` | `audit_record_1596` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_16` | `account_994` | `account_service` | `evidence_05` | Evidence content (evidence_05 contains alias); Activity window (within 120m of reported_at) |
+| `case_16` | `search_1007` | `search_service` | `evidence_05` | Evidence content (evidence_05 contains alias); Activity window (within 120m of reported_at) |
+| `case_16` | `audit_record_9528` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_17` | `backup_3245` | `backup_service` | `evidence_01` | Evidence content (evidence_01); Activity window (within 120m of reported_at) |
+| `case_17` | `account_4092` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_17` | `audit_record_1797` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_18` | `search_4013` | `search_service` | `evidence_94` | Evidence content (evidence_94 contains alias); Activity window (within 120m of reported_at) |
+| `case_18` | `analytics_037` | `analytics_platform` | `evidence_94` | Evidence content (evidence_94 contains alias); Activity window (within 120m of reported_at) |
+| `case_18` | `support_5569` | `support_platform` | `evidence_94` | Evidence content (evidence_94 contains alias); Activity window (within 120m of reported_at) |
+| `case_18` | `data_flow_4890` | `integration_service` | `evidence_94` | Evidence content (evidence_94 contains alias); Activity window (within 120m of reported_at) |
+| `case_18` | `account_5521` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_18` | `audit_record_6645` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_19` | `search_6083` | `search_service` | `evidence_01` | Evidence content (evidence_01 contains alias); Activity window (within 120m of reported_at) |
+| `case_19` | `support_9553` | `support_platform` | `evidence_01` | Evidence content (evidence_01 contains alias); Activity window (within 120m of reported_at) |
+| `case_19` | `account_9102` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_19` | `audit_record_6793` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_20` | `search_4262` | `search_service` | `evidence_94` | Evidence content (evidence_94 contains alias); Activity window (within 120m of reported_at) |
+| `case_20` | `data_flow_1770` | `integration_service` | `evidence_94` | Evidence content (evidence_94 contains alias); Activity window (within 120m of reported_at) |
+| `case_20` | `account_5037` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_20` | `audit_record_5569` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_21` | `account_6440` | `account_service` | `evidence_92` | Evidence content (evidence_92); Activity window (within 120m of reported_at) |
+| `case_21` | `audit_record_3737` | `security_service` | `evidence_92` | Evidence content (evidence_92 contains alias) |
+| `case_21` | `analytics_5335` | `analytics_platform` | `evidence_92` | Evidence content (evidence_92); Activity window (within 120m of reported_at) |
+| `case_22` | `search_8911` | `search_service` | `evidence_05` | Evidence content (evidence_05 contains alias); Activity window (within 120m of reported_at) |
+| `case_22` | `analytics_4440` | `analytics_platform` | `evidence_05` | Evidence content (evidence_05 contains alias); Activity window (within 120m of reported_at) |
+| `case_22` | `account_4990` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_22` | `audit_record_3482` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_23` | `export_7364` | `export_service` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_23` | `search_898` | `search_service` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_23` | `account_410` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_23` | `audit_record_4128` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_24` | `account_5334` | `account_service` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_24` | `search_5577` | `search_service` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_24` | `audit_record_7095` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_25` | `account_3136` | `account_service` | `evidence_92` | Evidence content (evidence_92); Activity window (within 120m of reported_at) |
+| `case_25` | `audit_record_451` | `security_service` | `evidence_92` | Evidence content (evidence_92 contains alias) |
+| `case_25` | `analytics_1895` | `analytics_platform` | `evidence_92` | Evidence content (evidence_92); Activity window (within 120m of reported_at) |
+| `case_26` | `account_5684` | `account_service` | `evidence_92` | Evidence content (evidence_92); Activity window (within 120m of reported_at) |
+| `case_26` | `audit_record_5416` | `security_service` | `evidence_92` | Evidence content (evidence_92 contains alias) |
+| `case_26` | `support_4715` | `support_platform` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_26` | `analytics_4566` | `analytics_platform` | `evidence_92` | Evidence content (evidence_92); Activity window (within 120m of reported_at) |
+| `case_26` | `data_flow_6244` | `integration_service` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_26` | `backup_3120` | `backup_service` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_27` | `account_3866` | `account_service` | `evidence_92` | Evidence content (evidence_92); Activity window (within 120m of reported_at) |
+| `case_27` | `audit_record_3830` | `security_service` | `evidence_92` | Evidence content (evidence_92 contains alias) |
+| `case_27` | `support_4707` | `support_platform` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_27` | `analytics_4574` | `analytics_platform` | `evidence_92` | Evidence content (evidence_92); Activity window (within 120m of reported_at) |
+| `case_27` | `data_flow_2295` | `integration_service` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_27` | `backup_5970` | `backup_service` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_28` | `account_5482` | `account_service` | `evidence_92` | Evidence content (evidence_92); Activity window (within 120m of reported_at) |
+| `case_28` | `audit_record_9265` | `security_service` | `evidence_92` | Evidence content (evidence_92 contains alias) |
+| `case_28` | `support_2351` | `support_platform` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_28` | `analytics_6077` | `analytics_platform` | `evidence_92` | Evidence content (evidence_92); Activity window (within 120m of reported_at) |
+| `case_28` | `data_flow_2337` | `integration_service` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_28` | `backup_838` | `backup_service` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_29` | `search_1993` | `search_service` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_29` | `analytics_5208` | `analytics_platform` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_29` | `support_5281` | `support_platform` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_29` | `data_flow_3827` | `integration_service` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_29` | `account_7012` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_29` | `audit_record_3954` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_30` | `search_9359` | `search_service` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_30` | `analytics_3697` | `analytics_platform` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_30` | `support_6477` | `support_platform` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_30` | `data_flow_8524` | `integration_service` | `evidence_92` | Evidence content (evidence_92 contains alias); Activity window (within 120m of reported_at) |
+| `case_30` | `account_4163` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_30` | `audit_record_1707` | `security_service` | `-` | Snapshot scan / Resource bridging |
+| `case_31` | `account_4857` | `account_service` | `evidence_51` | Evidence content (evidence_51); Activity window (within 120m of reported_at) |
+| `case_31` | `audit_record_6909` | `security_service` | `evidence_51` | Evidence content (evidence_51 contains alias) |
+| `case_31` | `tombstone_440` | `identity_service` | `evidence_51` | Evidence content (evidence_51 contains alias); Activity window (within 120m of reported_at) |
+| `case_32` | `tombstone_9178` | `identity_service` | `evidence_51` | Evidence content (evidence_51 contains alias); Activity window (within 120m of reported_at) |
+| `case_32` | `account_8858` | `account_service` | `-` | Activity window (within 120m of reported_at) |
+| `case_32` | `audit_record_7068` | `security_service` | `-` | Snapshot scan / Resource bridging |
+
+## §1.6 File-to-Observation Coverage Table (All 94 Evidence Files)
+
+Snapshot coverage across all 94 evidence files. Zero-row snapshots like evidence_90 are tracked as valid coverage records with empty resource sets, enabling Phase 6 to prove records are ABSENT.
+
+| File ID | File Path | Origin | Observations | Coverage Scopes | Status |
+|---|---|---|---:|---:|---|
+| `evidence_01` | `evidence/logs/service_events_ap_south_20260915.log` | `central_observability_export` | 89 | 0 | Parsed |
+| `evidence_02` | `evidence/records/customer_data_snapshot_bundle_20260917.json` | `records_assurance_snapshot_bundle` | 41 | 11 | Parsed |
+| `evidence_03` | `evidence/records/customer_account_handover_20261001.txt` | `customer_account_service` | 41 | 0 | Parsed |
+| `evidence_04` | `evidence/images/account_admin_console_20260926.png` | `account_admin_portal` | 1 | 0 | Parsed |
+| `evidence_05` | `evidence/databases/customer_data_read_replica_20260921.sql` | `customer_data_read_replica_capture` | 61 | 2 | Parsed |
+| `evidence_06` | `evidence/logs/structured_service_events_eu_west_20260918.log` | `central_observability_export` | 102 | 0 | Parsed |
+| `evidence_07` | `evidence/records/customer_data_snapshot_bundle_20260913.json` | `records_assurance_snapshot_bundle` | 30 | 9 | Parsed |
+| `evidence_08` | `evidence/logs/search_index_diagnostic_20260906.log` | `search_index_service` | 36 | 0 | Parsed |
+| `evidence_09` | `evidence/images/search_index_inspector_20260901.png` | `search_index_admin` | 2 | 0 | Parsed |
+| `evidence_10` | `evidence/databases/customer_data_read_replica_20260827.sql` | `customer_data_read_replica_capture` | 59 | 2 | Parsed |
+| `evidence_11` | `evidence/logs/syslog_archive_us_east_20260824.log` | `central_observability_export` | 93 | 0 | Parsed |
+| `evidence_12` | `evidence/records/customer_data_snapshot_bundle_20260819.json` | `records_assurance_snapshot_bundle` | 29 | 11 | Parsed |
+| `evidence_13` | `evidence/records/connector_configurations_20260812.json` | `integration_management_service` | 39 | 1 | Parsed |
+| `evidence_14` | `evidence/images/connector_management_console_20260807.png` | `integration_admin` | 2 | 0 | Parsed |
+| `evidence_15` | `evidence/databases/customer_data_read_replica_20260802.sql` | `customer_data_read_replica_capture` | 49 | 2 | Parsed |
+| `evidence_16` | `evidence/logs/application_trace_ap_northeast_20260730.log` | `central_observability_export` | 86 | 0 | Parsed |
+| `evidence_17` | `evidence/records/customer_data_snapshot_bundle_20260725.json` | `records_assurance_snapshot_bundle` | 36 | 11 | Parsed |
+| `evidence_18` | `evidence/documents/account_history_report_20260718.pdf` | `account_history_service` | 1 | 0 | Parsed |
+| `evidence_19` | `evidence/images/analytics_profile_view_20260713.png` | `analytics_platform` | 1 | 0 | Parsed |
+| `evidence_20` | `evidence/databases/customer_data_read_replica_20260708.sql` | `customer_data_read_replica_capture` | 63 | 2 | Parsed |
+| `evidence_21` | `evidence/logs/operations_stream_eu_central_20260705.log` | `central_observability_export` | 107 | 0 | Parsed |
+| `evidence_22` | `evidence/records/customer_data_snapshot_bundle_20260630.json` | `records_assurance_snapshot_bundle` | 71 | 11 | Parsed |
+| `evidence_23` | `evidence/images/customer_export_console_20260618.png` | `export_service` | 2 | 0 | Parsed |
+| `evidence_24` | `evidence/databases/customer_data_read_replica_20260613.sql` | `customer_data_read_replica_capture` | 50 | 2 | Parsed |
+| `evidence_25` | `evidence/logs/cloud_runtime_export_us_west_20260608.log` | `central_observability_export` | 109 | 0 | Parsed |
+| `evidence_26` | `evidence/records/customer_data_snapshot_bundle_20260605.json` | `records_assurance_snapshot_bundle` | 32 | 9 | Parsed |
+| `evidence_27` | `evidence/documents/legal_retention_register_20260529.pdf` | `legal_retention_service` | 6 | 0 | Parsed |
+| `evidence_28` | `evidence/images/support_ticket_console_20260524.png` | `support_platform` | 1 | 0 | Parsed |
+| `evidence_29` | `evidence/databases/customer_data_regional_replicas_20260519.sql` | `customer_data_regional_replicas_capture` | 85 | 3 | Parsed |
+| `evidence_30` | `evidence/logs/service_events_sa_east_20260516.log` | `central_observability_export` | 92 | 0 | Parsed |
+| `evidence_31` | `evidence/records/customer_data_snapshot_bundle_20260511.json` | `records_assurance_snapshot_bundle` | 74 | 10 | Parsed |
+| `evidence_32` | `evidence/images/backup_restore_console_20260429.png` | `backup_service` | 1 | 0 | Parsed |
+| `evidence_33` | `evidence/databases/customer_data_regional_replicas_20260424.sql` | `customer_data_regional_replicas_capture` | 89 | 3 | Parsed |
+| `evidence_34` | `evidence/logs/structured_service_events_ca_central_20260419.log` | `central_observability_export` | 117 | 0 | Parsed |
+| `evidence_35` | `evidence/records/customer_data_snapshot_bundle_20260416.json` | `records_assurance_snapshot_bundle` | 28 | 8 | Parsed |
+| `evidence_36` | `evidence/records/customer_export_manifest_20260409.json` | `customer_export_service` | 46 | 1 | Parsed |
+| `evidence_37` | `evidence/images/security_audit_explorer_20260905.png` | `security_service` | 1 | 0 | Parsed |
+| `evidence_38` | `evidence/databases/customer_data_regional_replicas_20260330.sql` | `customer_data_regional_replicas_capture` | 85 | 3 | Parsed |
+| `evidence_39` | `evidence/logs/syslog_archive_ap_southeast_20260325.log` | `central_observability_export` | 102 | 0 | Parsed |
+| `evidence_40` | `evidence/records/customer_data_snapshot_bundle_20260322.json` | `records_assurance_snapshot_bundle` | 31 | 12 | Parsed |
+| `evidence_41` | `evidence/logs/notification_delivery_20260315.log` | `downstream_delivery_service` | 39 | 0 | Parsed |
+| `evidence_42` | `evidence/images/deleted_account_reference_20260310.png` | `identity_service` | 1 | 0 | Parsed |
+| `evidence_43` | `evidence/databases/customer_data_reporting_replica_20260305.sql` | `customer_data_reporting_replica_capture` | 51 | 2 | Parsed |
+| `evidence_44` | `evidence/logs/application_trace_eu_north_20260302.log` | `central_observability_export` | 111 | 0 | Parsed |
+| `evidence_45` | `evidence/records/customer_data_snapshot_bundle_20260223.json` | `records_assurance_snapshot_bundle` | 75 | 11 | Parsed |
+| `evidence_46` | `evidence/images/object_storage_browser_20260213.png` | `object_storage` | 1 | 0 | Parsed |
+| `evidence_47` | `evidence/databases/customer_data_reporting_replica_20260208.sql` | `customer_data_reporting_replica_capture` | 49 | 2 | Parsed |
+| `evidence_48` | `evidence/logs/operations_stream_me_central_20260203.log` | `central_observability_export` | 81 | 0 | Parsed |
+| `evidence_49` | `evidence/records/customer_data_snapshot_bundle_20260131.json` | `records_assurance_snapshot_bundle` | 34 | 10 | Parsed |
+| `evidence_50` | `evidence/records/security_audit_ledger_20261001.json` | `security_audit_service` | 20 | 1 | Parsed |
+| `evidence_51` | `evidence/records/customer_data_snapshot_bundle_20260915.json` | `records_assurance_snapshot_bundle` | 4 | 3 | Parsed |
+| `evidence_52` | `evidence/databases/customer_data_failover_replica_20260920.sql` | `customer_data_failover_replica_capture` | 32 | 2 | Parsed |
+| `evidence_53` | `evidence/logs/cloud_runtime_export_af_south_20260930.log` | `central_observability_export` | 302 | 0 | Parsed |
+| `evidence_54` | `evidence/databases/customer_accounts_failover_replica_20260902.sql` | `customer_account_failover_replica_capture` | 7 | 2 | Parsed |
+| `evidence_55` | `evidence/documents/security_retention_extract.pdf` | `security_service` | 1 | 0 | Parsed |
+| `evidence_56` | `evidence/records/customer_analytics_report_20260907.json` | `analytics_platform` | 2 | 1 | Parsed |
+| `evidence_57` | `evidence/databases/customer_search_primary_20260910.sql` | `customer_search_primary_capture` | 3 | 1 | Parsed |
+| `evidence_58` | `evidence/documents/delivery_correction_attachment.pdf` | `support_platform` | 1 | 0 | Parsed |
+| `evidence_59` | `evidence/records/customer_export_jobs_20260914.json` | `export_service` | 2 | 1 | Parsed |
+| `evidence_60` | `evidence/images/marketing_profile_console.png` | `marketing_platform` | 1 | 0 | Parsed |
+| `evidence_61` | `evidence/logs/support_replica.log` | `support_platform` | 9 | 0 | Parsed |
+| `evidence_62` | `evidence/records/service_resource_export_20260129_114459.json` | `service_resource_export` | 29 | 8 | Parsed |
+| `evidence_63` | `evidence/databases/customer_data_inventory_20260213.sql` | `customer_data_inventory_capture` | 17 | 8 | Parsed |
+| `evidence_64` | `evidence/logs/resource_lookup_trace_20260218_083911.log` | `service_readback_logs` | 54 | 0 | Parsed |
+| `evidence_65` | `evidence/records/service_resource_export_20260228_103637.json` | `service_resource_export` | 27 | 8 | Parsed |
+| `evidence_66` | `evidence/databases/customer_data_inventory_20260310.sql` | `customer_data_inventory_capture` | 23 | 8 | Parsed |
+| `evidence_67` | `evidence/logs/resource_lookup_trace_20260310_061801.log` | `service_readback_logs` | 4 | 0 | Parsed |
+| `evidence_68` | `evidence/records/service_resource_export_20260320_072349.json` | `service_resource_export` | 25 | 7 | Parsed |
+| `evidence_69` | `evidence/databases/customer_data_inventory_20260404.sql` | `customer_data_inventory_capture` | 18 | 8 | Parsed |
+| `evidence_70` | `evidence/logs/resource_lookup_trace_20260414_054007.log` | `service_readback_logs` | 50 | 0 | Parsed |
+| `evidence_71` | `evidence/records/service_resource_export_20260429_083222.json` | `service_resource_export` | 28 | 8 | Parsed |
+| `evidence_72` | `evidence/databases/customer_data_inventory_20260504.sql` | `customer_data_inventory_capture` | 21 | 8 | Parsed |
+| `evidence_73` | `evidence/logs/resource_lookup_trace_20260509_104353.log` | `service_readback_logs` | 68 | 0 | Parsed |
+| `evidence_74` | `evidence/records/service_resource_export_20260514_114454.json` | `service_resource_export` | 25 | 7 | Parsed |
+| `evidence_75` | `evidence/databases/customer_data_inventory_20260524.sql` | `customer_data_inventory_capture` | 24 | 8 | Parsed |
+| `evidence_76` | `evidence/logs/resource_lookup_trace_20260529_074313.log` | `service_readback_logs` | 48 | 0 | Parsed |
+| `evidence_77` | `evidence/records/service_resource_export_20260603_083457.json` | `service_resource_export` | 27 | 7 | Parsed |
+| `evidence_78` | `evidence/databases/customer_data_inventory_20260618.sql` | `customer_data_inventory_capture` | 19 | 8 | Parsed |
+| `evidence_79` | `evidence/logs/resource_lookup_trace_20260623_053726.log` | `service_readback_logs` | 60 | 0 | Parsed |
+| `evidence_80` | `evidence/records/service_resource_export_20260628_062556.json` | `service_resource_export` | 24 | 8 | Parsed |
+| `evidence_81` | `evidence/databases/customer_data_inventory_20260703.sql` | `customer_data_inventory_capture` | 24 | 8 | Parsed |
+| `evidence_82` | `evidence/logs/resource_lookup_trace_20260713_093359.log` | `service_readback_logs` | 54 | 0 | Parsed |
+| `evidence_83` | `evidence/records/service_resource_export_20260718_104335.json` | `service_resource_export` | 29 | 8 | Parsed |
+| `evidence_84` | `evidence/databases/customer_data_inventory_20260723.sql` | `customer_data_inventory_capture` | 26 | 8 | Parsed |
+| `evidence_85` | `evidence/logs/resource_lookup_trace_20260728_054417.log` | `service_readback_logs` | 46 | 0 | Parsed |
+| `evidence_86` | `evidence/records/service_resource_export_20260807_074104.json` | `service_resource_export` | 23 | 8 | Parsed |
+| `evidence_87` | `evidence/databases/customer_data_inventory_20260817.sql` | `customer_data_inventory_capture` | 19 | 8 | Parsed |
+| `evidence_88` | `evidence/logs/resource_lookup_trace_20260822_103910.log` | `service_readback_logs` | 46 | 0 | Parsed |
+| `evidence_89` | `evidence/records/service_resource_export_20260901_053316.json` | `service_resource_export` | 23 | 8 | Parsed |
+| `evidence_90` | `evidence/databases/customer_data_inventory_20260905.sql` | `customer_data_inventory_capture` | 0 | 8 | Empty Snapshot |
+| `evidence_91` | `evidence/logs/resource_lookup_trace_20260911_074253.log` | `service_readback_logs` | 62 | 0 | Parsed |
+| `evidence_92` | `evidence/records/service_resource_export_20260915_114455.json` | `service_resource_export` | 36 | 8 | Parsed |
+| `evidence_93` | `evidence/databases/customer_data_inventory_20260916.sql` | `customer_data_inventory_capture` | 17 | 8 | Parsed |
+| `evidence_94` | `evidence/logs/resource_lookup_trace_20260926_103856.log` | `service_readback_logs` | 58 | 0 | Parsed |

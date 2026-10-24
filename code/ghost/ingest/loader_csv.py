@@ -125,13 +125,13 @@ def load_audit_log_observations(path: Path = USER_AUDIT_LOG_CSV) -> list[Observa
         reader = csv.DictReader(f)
         for r in reader:
             audit_id = r["audit_id"].strip()
-            ev_time = _parse_iso(r["changed_at"])
+            ev_time = _parse_iso(r.get("event_time") or r.get("changed_at"))
             uid = r.get("user_id", "").strip()
-            field_name = r.get("field_changed", "").strip()
+            field_name = r.get("field_name", "").strip()
 
             fields: dict[str, Any] = {
                 "user_id": uid,
-                "field_changed": field_name,
+                "field_name": field_name,
                 "old_value": r.get("old_value", "").strip(),
                 "new_value": r.get("new_value", "").strip(),
                 "actor": r.get("actor", "").strip(),
@@ -139,6 +139,8 @@ def load_audit_log_observations(path: Path = USER_AUDIT_LOG_CSV) -> list[Observa
             if field_name == "email":
                 if r.get("new_value"):
                     fields["email"] = r["new_value"].strip().lower()
+                if r.get("old_value"):
+                    fields["old_email"] = r["old_value"].strip().lower()
             elif field_name == "phone":
                 if r.get("new_value"):
                     fields["phone"] = r["new_value"].strip()

@@ -28,10 +28,26 @@ class Observation:
 
 
 @dataclass(frozen=True)
+class SnapshotCoverage:
+    """
+    Records the scope and presence of records in a specific snapshot/store.
+    Enables Phase 6 state verification to prove a record is ABSENT from a store
+    when the store was inspected and the record was not in resource_ids.
+    Zero-row snapshots (e.g. evidence_90) yield valid SnapshotCoverage records with resource_ids=frozenset().
+    """
+    file_id: str
+    captured_at: datetime
+    system_id: str
+    store: str
+    scope_name: str                     # Table name, collection name, or file section
+    resource_ids: frozenset[str]        # All resource_ids present in this scope (may be empty)
+
+
+@dataclass(frozen=True)
 class UnparsedEvidenceRecord:
     """
-    Explicit record for any evidence file or section that yielded no valid observations.
-    Ensures zero silent failures across the 94 evidence files.
+    Explicit record for any evidence file or section that yielded no valid observations
+    due to a genuine parse or read failure.
     """
     file_id: str
     file_path: str
