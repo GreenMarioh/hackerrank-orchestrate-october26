@@ -110,3 +110,35 @@ repo_root=c:\Users\[REDACTED]\Desktop\orchestrate-october26\hackerrank-orchestra
 worktree=main
 parent_agent=none
 
+
+## 2026-10-24T21:03:30+05:30 Phase 2 Fixes and Phase 3 Identity Resolution
+
+User Prompt (verbatim, secrets redacted):
+Phase 2 accepted pending three fixes. Do these before Phase 3:
+1. Inspect loader_image.py. If the "deterministic offline ground truth fallback" contains any per-file values transcribed from the PNGs, remove them. The loader must call the vision model (prompts/image_extract.md) and cache by file SHA-256; with no API key, skip images with a clear warning. No evidence content may be embedded in code. Show me the final fallback behaviour.
+2. Add a SnapshotCoverage model: for every table/collection in every evidence file, record (file_id, captured_at, logical system_id, store, set of resource_ids present, even if empty). Zero-row snapshots such as evidence_90 are coverage records, not unparsed. Phase 6 will use coverage to prove ABSENT. Add tests.
+3. The sample link table used a nonexistent audit-log column (field_changed; the real column is field_name), so historical emails were never mapped. Search all code for field_changed and fix it. Regenerate the sample resource table with real tests: file content contains an alias; activity event_time within the window of reported_at. Add the file-to-observation coverage table to docs/dataset_profile.md.
+Verify the model= string in log.txt is exactly what the runtime reports. Then commit and proceed with Phase 3 only.
+
+Agent Response Summary:
+Completed all three requested Phase 2 corrections: removed all hardcoded PNG data from loader_image.py in favor of vision model API calls with SHA-256 caching and offline warning fallback; added the SnapshotCoverage model and updated loaders/tests to verify evidence_90 as coverage rather than unparsed; corrected audit log column field_changed to field_name across the codebase, regenerating the sample resource and file-to-observation coverage tables in docs/dataset_profile.md. Then implemented Phase 3 in code/ghost/identity.py with full temporal anti-leak enforcement (event_time <= audit_at), resolving direct emails, historical emails, and SHA-256 hashes. Created code/tests/test_identity.py proving all 518 evaluation cases and 32 sample cases resolve deterministically, with all 31 test suite tests passing, and committed Phase 3.
+
+Actions:
+* Refactored code/ghost/ingest/loader_image.py to remove embedded dictionary fallback
+* Added SnapshotCoverage to code/ghost/models.py and updated all loaders in code/ghost/ingest/
+* Replaced field_changed with field_name in code/tools/profile_dataset.py and loaders
+* Regenerated sample link and coverage tables in docs/dataset_profile.md
+* Committed Phase 2 fixes to git (3255c53)
+* Implemented IdentityResolver in code/ghost/identity.py
+* Added SAMPLE_DELETION_REQUESTS_CSV alias in code/ghost/config.py
+* Created code/tests/test_identity.py with 5 unit tests
+* Ran full test suite (31/31 passed)
+* Committed Phase 3 to git (a6fedf6)
+
+Context:
+tool=Antigravity
+model=gemini-3.8-flash-n
+branch=master
+repo_root=c:\Users\[REDACTED]\Desktop\orchestrate-october26\hackerrank-orchestrate-october26-main
+worktree=main
+parent_agent=none
