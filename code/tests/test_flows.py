@@ -113,6 +113,55 @@ def test_3_disabled_flow_not_active(sample_subject):
     assert finding.evidence_id == "evidence_02"
 
 
+def test_historical_delivery_without_active_state_is_not_active(sample_subject):
+    """
+    Historical successful delivery alone does not prove the connector remained enabled.
+    A flow with last_delivery_status='delivered' but enabled=False (or no current active evidence)
+    must NOT be classified as active.
+    """
+    audit_at = datetime(2026, 9, 20, 12, 0, 0, tzinfo=timezone.utc)
+
+    # Case A: Explicit enabled=False with historical last_delivery_status='delivered'
+    obs_disabled_with_delivery = [
+        Observation(
+            obs_id="obs_hist_1",
+            file_id="evidence_02",
+            captured_at=datetime(2026, 9, 15, 10, 0, 0, tzinfo=timezone.utc),
+            system_id="integration_service",
+            store="primary",
+            resource_id="data_flow_201",
+            category=None,
+            fields={"user_id": "user_99", "enabled": False, "last_delivery_status": "delivered"},
+            file_captured_at=datetime(2026, 9, 15, 10, 0, 0, tzinfo=timezone.utc),
+        )
+    ]
+    detector_a = FlowRiskDetector(observations=obs_disabled_with_delivery)
+    finding_a = detector_a.audit_resource("data_flow_201", "integration_service", sample_subject, audit_at)
+    assert finding_a is not None
+    assert finding_a.state == "DISABLED"
+    assert finding_a.is_risk is False
+
+    # Case B: No enabled field, only historical delivery status
+    obs_no_toggle = [
+        Observation(
+            obs_id="obs_hist_2",
+            file_id="evidence_02",
+            captured_at=datetime(2026, 9, 15, 10, 0, 0, tzinfo=timezone.utc),
+            system_id="integration_service",
+            store="primary",
+            resource_id="data_flow_202",
+            category=None,
+            fields={"user_id": "user_99", "last_delivery_status": "delivered"},
+            file_captured_at=datetime(2026, 9, 15, 10, 0, 0, tzinfo=timezone.utc),
+        )
+    ]
+    detector_b = FlowRiskDetector(observations=obs_no_toggle)
+    finding_b = detector_b.audit_resource("data_flow_202", "integration_service", sample_subject, audit_at)
+    assert finding_b is not None
+    assert finding_b.state == "DISABLED"
+    assert finding_b.is_risk is False
+
+
 def test_4_temporal_proximity_without_subject_link_excluded(sample_subject):
     """4. A flow with temporal proximity to a subject anchor but no defensible link must be excluded."""
     audit_at = datetime(2026, 9, 20, 12, 0, 0, tzinfo=timezone.utc)

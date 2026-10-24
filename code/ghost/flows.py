@@ -190,15 +190,27 @@ class FlowRiskDetector:
             st = str(f.get("status", "")).upper()
             lds = str(f.get("last_delivery_status", "")).lower()
 
-            if en is True or str(en).lower() in ("true", "1") or st == "ACTIVE" or lds == "delivered":
-                is_active = True
-                latest_citable = o.file_id
-                details = f"Active data flow observed in {o.file_id} (enabled={en}, status={st})"
-                break
-            elif en is False or str(en).lower() in ("false", "0") or st in ("DISABLED", "STOPPED", "INACTIVE") or lds == "stopped":
+            # Explicit disabled state takes precedence
+            if (
+                en is False
+                or str(en).lower() in ("false", "0")
+                or st in ("DISABLED", "STOPPED", "INACTIVE")
+                or lds == "stopped"
+            ):
                 is_active = False
                 latest_citable = o.file_id
                 details = f"Disabled data flow observed in {o.file_id} (enabled={en}, status={st})"
+                break
+            # Active status strictly requires current enabled toggle or ACTIVE status
+            elif (
+                en is True
+                or str(en).lower() in ("true", "1")
+                or st == "ACTIVE"
+                or (str(f.get("scheduler_registered", "")).lower() in ("true", "1") and en is not False)
+            ):
+                is_active = True
+                latest_citable = o.file_id
+                details = f"Active data flow observed in {o.file_id} (enabled={en}, status={st})"
                 break
 
         # Check if newer activity event changes or establishes the state
