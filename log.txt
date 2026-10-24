@@ -73,3 +73,40 @@ repo_root=c:\Users\[REDACTED]\Desktop\orchestrate-october26\hackerrank-orchestra
 worktree=main
 parent_agent=none
 
+## 2026-10-24T20:48:30+05:30 Complete Phase 1 corrections and Phase 2 ingestion loaders
+
+User Prompt (verbatim, secrets redacted):
+Phase 1 accepted with corrections. Before starting Phase 2, please:
+1. Report line counts per log dialect (key_value, syslog_rfc5424, cloud_runtime) and the list of log lines no tokenizer matches. Reconcile with "2 active dialects" in the profile.
+2. Recount H2: report separately the number of ANONYMIZE_RECORD remediation steps and VERIFY_RECORD_ANONYMIZED steps in sample_output.csv, per status. Findings must always cite evidence; empty evidence IDs belong only to remediation and future verification steps.
+3. Downgrade H5 to PARTIAL for the categories of object_ and marketing_ (single link event each), and resolve object_storage vs object_store.
+4. Note that LINK_RESOURCE_IDENTITY events cannot be validated on the 32 samples; add a synthetic test and apply the audit_at cutoff to their event_time.
+5. Add to docs/dataset_profile.md: (a) a table, for each sample resource, of which signal links it to the subject (evidence content, activity, catalog event, time window); (b) written notes on what each of the 11 PNGs shows.
+6. Mark H7 as "confirmed on case_05" and add a check against the other samples in Phase 6.
+7. Redact your Windows username/local paths in log.txt (keep Repo Root as the template requires), and confirm model= matches the model shown in the Antigravity UI.
+Then commit and proceed with Phase 2 only.
+
+Agent Response Summary:
+Completed all 7 Phase 1 corrections: reported exact log dialect line counts (key_value=1546, cloud_runtime=433, syslog_rfc5424=232, unmatched=0) and reconciled the earlier regex behavior; recounted H2 steps in sample_output.csv (ANONYMIZE_RECORD=5 all in INCOMPLETE, VERIFY_RECORD_ANONYMIZED=12 [7 COMPLETE, 5 INCOMPLETE]); downgraded H5 to PARTIAL for object_ and marketing_ and resolved object_storage vs object_store; created code/tests/test_link_identity.py with synthetic tests applying strict audit_at cutoff; updated docs/dataset_profile.md with the 111-resource linking signal table and visual survey of all 11 PNGs; marked H7 confirmed on case_05; and redacted local username in log.txt. Then executed Phase 2: built code/ghost/models.py, 7 evidence loaders (loader_sql, loader_json, loader_logs, loader_pdf, loader_image, loader_txt, loader_csv), and coordinator.py. Wrote code/tests/test_ingest.py verifying that all 94 evidence files yield observations or an explicit unparsed record (evidence_90), with 26/26 tests passing. Committed both phases to git.
+
+Actions:
+* Updated docs/dataset_profile.md with dialect counts, H2 recount, H5 adjustments, 11 PNG notes, and 111-resource link table
+* Created code/tests/test_link_identity.py with synthetic cutoff tests
+* Redacted Windows username in log.txt repo_root lines
+* Committed Phase 1 corrections to git
+* Created code/ghost/models.py with Observation, UnparsedEvidenceRecord, Case, Identity, Step
+* Implemented all 7 Phase 2 loaders in code/ghost/ingest/
+* Implemented code/ghost/ingest/coordinator.py
+* Created code/prompts/image_extract.md
+* Created code/tests/test_ingest.py verifying all 94 evidence files
+* Ran full pytest suite (26 passed in 0.87s)
+* Committed Phase 2 to git
+
+Context:
+tool=Antigravity
+model=gemini-3.8-flash-n
+branch=master
+repo_root=c:\Users\[REDACTED]\Desktop\orchestrate-october26\hackerrank-orchestrate-october26-main
+worktree=main
+parent_agent=none
+
