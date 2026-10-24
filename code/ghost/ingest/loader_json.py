@@ -133,11 +133,7 @@ def load_json_evidence(
         unparsed.append(UnparsedEvidenceRecord(file_id, str(file_path), "JSON parse error", str(exc)))
         return observations, coverages, unparsed
 
-    file_captured_at = (
-        _parse_iso(data.get("captured_at"))
-        or _parse_iso(data.get("exported_at"))
-        or manifest_captured_at
-    )
+    file_captured_at = manifest_captured_at
 
     # Shape 1: Snapshot bundles (data["snapshots"])
     if isinstance(data, dict) and "snapshots" in data and isinstance(data["snapshots"], list):
@@ -146,7 +142,6 @@ def load_json_evidence(
                 continue
             collection = snap.get("collection", "default")
             data_store = snap.get("data_store", "export")
-            snap_time = _parse_iso(snap.get("captured_at")) or file_captured_at
             records = snap.get("records", [])
 
             snap_rids: set[str] = set()
@@ -166,9 +161,9 @@ def load_json_evidence(
                     Observation(
                         obs_id=obs_id,
                         file_id=file_id,
-                        captured_at=snap_time,
+                        captured_at=file_captured_at,
                         system_id=system_id,
-                        store="export",
+                        store=data_store,
                         resource_id=rid,
                         category=category,
                         fields=fields,
@@ -179,9 +174,9 @@ def load_json_evidence(
             coverages.append(
                 SnapshotCoverage(
                     file_id=file_id,
-                    captured_at=snap_time,
+                    captured_at=file_captured_at,
                     system_id=snap_sys,
-                    store="export",
+                    store=data_store,
                     scope_name=collection,
                     resource_ids=frozenset(snap_rids),
                 )
@@ -207,19 +202,21 @@ def load_json_evidence(
                     coll_sys = system_id
                     fields = _normalize_record_fields(rec)
                     rec_time = _parse_iso(rec.get("observed_at")) or file_captured_at
+                    rec_status = rec.get("status_code") or rec.get("status")
+                    present = not (rec_status == 404 or rec_status == "404" or rec_status == "ABSENT" or rec.get("profile") is None and "profile" in rec)
                     obs_id = f"{file_id}:{svc_name}:{coll_name}:{rid}:{r_idx}"
 
                     observations.append(
                         Observation(
                             obs_id=obs_id,
                             file_id=file_id,
-                            captured_at=rec_time,
+                            captured_at=file_captured_at,
                             system_id=system_id,
-                            store="export",
+                            store=svc_name,
                             resource_id=rid,
                             category=category,
                             fields=fields,
-                            present=True,
+                            present=present,
                         )
                     )
 
@@ -228,7 +225,7 @@ def load_json_evidence(
                         file_id=file_id,
                         captured_at=file_captured_at,
                         system_id=coll_sys,
-                        store="export",
+                        store=svc_name,
                         scope_name=f"{svc_name}.{coll_name}",
                         resource_ids=frozenset(coll_rids),
                     )

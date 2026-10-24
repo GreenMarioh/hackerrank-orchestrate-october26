@@ -279,10 +279,17 @@ def load_log_evidence(
         if phone:
             fields["phone"] = str(phone).strip()
 
-        # Handle record_lookup event result and record_type
+        # Handle record_lookup and profile_lookup event results
         category = parsed.get("record_type")
         result_val = str(parsed.get("result", "")).strip().upper()
-        present = result_val != "NOT_FOUND"
+        http_status = str(parsed.get("http_status", "")).strip()
+        rows_val = str(parsed.get("rows", "")).strip()
+        event_name = str(parsed.get("event", "")).strip()
+
+        if result_val == "NOT_FOUND" or http_status == "404" or (rows_val == "0" and "completed" in event_name):
+            present = False
+        else:
+            present = True
 
         obs_id = f"{file_id}:line_{idx}:{rid}"
         observations.append(
