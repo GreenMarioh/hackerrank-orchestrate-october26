@@ -112,3 +112,68 @@ def test_sample_dataset_linking_measurement(loaded_env):
     # Average candidate count per case should be manageable
     avg_candidates = total_candidates / len(cases)
     assert avg_candidates <= 25.0, f"Average candidates per case too high: {avg_candidates:.1f}"
+
+
+def test_alias_boundary_and_substring_isolation():
+    from ghost.models import Observation
+    linker = EvidenceLinker(observations=[], activity_path=SYSTEM_ACTIVITY_CSV, rule_engine=default_rule_engine)
+
+    # Synthetic subject user_43
+    audit_at = datetime(2026, 9, 20, 0, 0, 0, tzinfo=timezone.utc)
+    subject = Identity(
+        user_id="user_43",
+        name="Amélie Dupont",
+        current_email="amelie@example.com",
+        all_emails=frozenset({"amelie@example.com"}),
+        all_phones=frozenset({"+971 50 482 7316"}),
+        all_hashes=frozenset({"hash_user_43"}),
+    )
+
+    # Observation with user_430 (should NOT match)
+    obs_other = Observation(
+        obs_id="obs_1",
+        file_id="evidence_99",
+        captured_at=datetime(2026, 9, 10, 0, 0, 0, tzinfo=timezone.utc),
+        store="primary",
+        system_id="account_service",
+        resource_id="account_999",
+        category=None,
+        fields={"user_id": "user_430", "email": "arjun@example.com"},
+    )
+
+    # Observation with exact user_43
+    obs_exact_user = Observation(
+        obs_id="obs_2",
+        file_id="evidence_98",
+        captured_at=datetime(2026, 9, 10, 0, 0, 0, tzinfo=timezone.utc),
+        store="primary",
+        system_id="account_service",
+        resource_id="account_043",
+        category=None,
+        fields={"user_id": "user_43", "email": "other@example.com"},
+    )
+
+    # Observation with phone containing +
+    obs_phone = Observation(
+        obs_id="obs_3",
+        file_id="evidence_97",
+        captured_at=datetime(2026, 9, 10, 0, 0, 0, tzinfo=timezone.utc),
+        store="crm",
+        system_id="support_service",
+        resource_id="support_043",
+        category=None,
+        fields={"contact": "+971 50 482 7316", "status": "open"},
+    )
+
+    linker.observations = [obs_other, obs_exact_user, obs_phone]
+    linked = linker.link_subject_resources(subject, audit_at=audit_at)
+
+    # Substring user_43 inside user_430 must NOT be linked
+    assert "account_999" not in linked
+    # Exact user_43 must be linked
+    assert "account_043" in linked
+    assert linked["account_043"].is_anchor is True
+    # Phone number with + must be linked
+    assert "support_043" in linked
+    assert linked["support_043"].is_anchor is True
+

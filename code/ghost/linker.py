@@ -99,11 +99,12 @@ class EvidenceLinker:
         if subject.name and len(subject.name) >= 3:
             aliases.add(subject.name.lower())
 
-        alias_patterns: list[tuple[str, re.Pattern]] = [
-            (a, re.compile(r"\b" + re.escape(a) + r"\b"))
-            for a in aliases
-            if len(a) >= 3
-        ]
+        alias_patterns: list[tuple[str, re.Pattern]] = []
+        for a in aliases:
+            if len(a) >= 3:
+                left_b = r"\b" if re.match(r"^\w", a) else r"(?<!\w)"
+                right_b = r"\b" if re.search(r"\w$", a) else r"(?!\w)"
+                alias_patterns.append((a, re.compile(left_b + re.escape(a) + right_b)))
 
         # -------------------------------------------------------------
         # 1. ANCHOR PHASE: Evidence observations matching aliases <= audit_at
