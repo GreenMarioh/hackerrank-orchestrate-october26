@@ -68,22 +68,24 @@ class RuleEngine:
     ) -> tuple[str | None, str]:
         """
         Determines the data category for a given resource.
-        Returns: (data_category, rationale)
+        Strict categorization order:
+        1. Explicit category from loader/schema if valid
+        2. Grounded resource ID prefixes (only prefixes that occur in dataset)
+        3. Document resources (doc_*) categorised strictly from document content
+        4. Unknown/unclear returns (None, reason) without guessing.
         """
+        # 1. Explicit category provided by evidence loader
         if explicit_category and explicit_category in self.rules_by_category:
             return explicit_category, "Explicit category provided by evidence loader"
 
         rid = resource_id.strip().lower()
-        sid = system_id.strip().lower()
         f = fields or {}
 
-        # 1. Direct prefix mappings
+        # 2. Grounded resource ID prefixes occurring in dataset
         if rid.startswith("tombstone_"):
             return "ACCOUNT_TOMBSTONE", "Resource prefix tombstone_ denotes account tombstone"
 
         if rid.startswith("account_"):
-            if f.get("account_status") == "deleted" or "tombstone" in rid:
-                return "ACCOUNT_TOMBSTONE", "Account marked deleted or identified as tombstone"
             return "USER_PROFILE", "Resource prefix account_ denotes user account profile"
 
         if rid.startswith("search_"):
@@ -96,16 +98,12 @@ class RuleEngine:
             return "SUPPORT_ATTACHMENT", "Resource prefix object_/attachment_ denotes support attachment"
 
         if rid.startswith("support_") or rid.startswith("ticket_"):
-            # If explicit attachment marker is present
             if f.get("storage_class") or f.get("file_name"):
                 return "SUPPORT_ATTACHMENT", "Support resource contains attachment file metadata"
             return "SUPPORT_MESSAGE", "Resource prefix support_/ticket_ denotes customer support message"
 
         if rid.startswith("analytics_"):
             return "ANALYTICS_PROFILE", "Resource prefix analytics_ denotes customer analytics record"
-
-        if rid.startswith("telemetry_"):
-            return "PRODUCT_TELEMETRY", "Resource prefix telemetry_ denotes client telemetry stream"
 
         if rid.startswith("export_"):
             return "USER_EXPORT", "Resource prefix export_ denotes generated customer data export"
@@ -131,26 +129,21 @@ class RuleEngine:
         if rid.startswith("restore_"):
             return "RESTORE_RISK", "Resource prefix restore_ denotes database restore target path"
 
-        # 2. System and document fallback
+        # 3. Document resources (doc_*) — categorised strictly from document content, not system_id
         if rid.startswith("doc_"):
-            if "legal" in sid:
-                return "LEGAL_HOLD_RECORD", "Document origin is legal retention service"
-            if "account" in sid:
-                return "USER_PROFILE", "Document origin is customer account service"
-            return "SUPPORT_MESSAGE", "Document origin is customer support platform"
+            doc_text = str(f.get("source_text", "")).lower()
+            if "statement" in doc_text or "customer statement" in doc_text or "account history" in doc_text:
+                return "USER_PROFILE", "Document content contains customer statement/order history"
+            if "retention register" in doc_text or "disputed orders" in doc_text or "tax records" in doc_text:
+                return "LEGAL_HOLD_RECORD", "Document content contains legal/tax retention register"
+            if "compliance journal" in doc_text or "security retention" in doc_text:
+                return "SECURITY_AUDIT_LOG", "Document content contains compliance journal extract"
+            if "delivery address correction" in doc_text or "support reference" in doc_text:
+                return "SUPPORT_MESSAGE", "Document content contains customer support correction request"
+            return None, "Document content does not match recognized document patterns"
 
-        if "search" in sid:
-            return "SEARCH_INDEX_ENTRY", "Service is search_service"
-        if "analytics" in sid:
-            return "ANALYTICS_PROFILE", "Service is analytics_platform"
-        if "export" in sid:
-            return "USER_EXPORT", "Service is export_service"
-        if "security" in sid or "audit" in sid:
-            return "SECURITY_AUDIT_LOG", "Service is security/audit service"
-        if "backup" in sid:
-            return "BACKUP_ARCHIVE", "Service is backup_service"
-
-        return None, "Unrecognized resource prefix and system origin"
+        # 4. No guesses — anything else returns None (UNKNOWN)
+        return None, "Unrecognized resource prefix without grounded category"
 
     def evaluate_rule(
         self,
@@ -174,21 +167,30 @@ class RuleEngine:
         rid = rule.rule_id
         action = rule.required_action
 
-        # Rule 01: USER_PROFILE -> Always DELETE
-        if rid == "rule_01":
-            return ConditionResult(status="MET", action=action, rule_id=rid, reason="Condition Always: USER_PROFILE must be deleted")
+        # If fields are missing/unavailable, return UNKNOWN without guessing
+        if not fields:
+            return ConditionResult(
+                status="UNKNOWN",
+                action=None,
+                rule_id=rid,
+                reason=f"Fields unavailable for {category}",
+            )
 
-        # Rule 02: SECONDARY_IDENTIFIER -> Always DELETE
-        if rid == "rule_02":
-            return ConditionResult(status="MET", action=action, rule_id=rid, reason="Condition Always: SECONDARY_IDENTIFIER must be deleted")
-
-        # Rule 03: SEARCH_INDEX_ENTRY -> Always DELETE
-        if rid == "rule_03":
-            return ConditionResult(status="MET", action=action, rule_id=rid, reason="Condition Always: SEARCH_INDEX_ENTRY must be deleted")
-
-        # Rule 04: CACHE_ENTRY -> Always DELETE
-        if rid == "rule_04":
-            return ConditionResult(status="MET", action=action, rule_id=rid, reason="Condition Always: CACHE_ENTRY must be deleted")
+        # Rules with condition 'Always': DELETE if record present; NOT_MET if already absent/deleted
+        if rid in ("rule_01", "rule_02", "rule_03", "rule_04", "rule_09", "rule_10"):
+            if fields.get("deleted") is True or fields.get("present") is False or fields.get("purged") is True:
+                return ConditionResult(
+                    status="NOT_MET",
+                    action="ABSENT",
+                    rule_id=rid,
+                    reason=f"Record is already absent/deleted for {category}",
+                )
+            return ConditionResult(
+                status="MET",
+                action=action,
+                rule_id=rid,
+                reason=f"Condition Always: {category} must be deleted",
+            )
 
         # Rule 05: SUPPORT_MESSAGE -> Conversation contains shared customer, agent, or order context
         if rid == "rule_05":
@@ -264,14 +266,6 @@ class RuleEngine:
                 return ConditionResult(status="NOT_MET", action="RETAIN", rule_id=rid, reason="Telemetry record unlinked")
             return ConditionResult(status="UNKNOWN", action=None, rule_id=rid, reason="Fields unavailable for PRODUCT_TELEMETRY")
 
-        # Rule 09: USER_EXPORT -> Always DELETE
-        if rid == "rule_09":
-            return ConditionResult(status="MET", action=action, rule_id=rid, reason="Condition Always: USER_EXPORT must be deleted")
-
-        # Rule 10: MARKETING_PROFILE -> Always DELETE
-        if rid == "rule_10":
-            return ConditionResult(status="MET", action=action, rule_id=rid, reason="Condition Always: MARKETING_PROFILE must be deleted")
-
         # Rule 11: EMAIL_DELIVERY_LOG -> Log contains a user email address
         if rid == "rule_11":
             has_email = bool(fields.get("email") or fields.get("customer_email") or fields.get("requester_email"))
@@ -282,9 +276,7 @@ class RuleEngine:
                     rule_id=rid,
                     reason="Log contains user email address that must be redacted",
                 )
-            if fields:
-                return ConditionResult(status="NOT_MET", action="RETAIN", rule_id=rid, reason="Log contains no user email address")
-            return ConditionResult(status="UNKNOWN", action=None, rule_id=rid, reason="Fields unavailable for EMAIL_DELIVERY_LOG")
+            return ConditionResult(status="NOT_MET", action="RETAIN", rule_id=rid, reason="Log contains no user email address")
 
         # Rule 12: SECURITY_AUDIT_LOG -> Record is within the supplied retention period
         if rid == "rule_12":
@@ -317,44 +309,58 @@ class RuleEngine:
                     rule_id=rid,
                     reason="Record has explicit retention_until policy",
                 )
-            if not fields:
-                return ConditionResult(status="UNKNOWN", action=None, rule_id=rid, reason="Fields unavailable for SECURITY_AUDIT_LOG")
-            # Default audit log retention
-            return ConditionResult(status="MET", action=action, rule_id=rid, reason="Security audit logs retained by default policy")
+            # When retention information is absent, return UNKNOWN
+            return ConditionResult(status="UNKNOWN", action=None, rule_id=rid, reason="Retention period field unavailable for SECURITY_AUDIT_LOG")
 
         # Rule 13: LEGAL_HOLD_RECORD -> A supplied legal hold is active
         if rid == "rule_13":
             retention_ts = fields.get("retained_until") or fields.get("retain_until")
             reason = fields.get("retention_reason")
-            if retention_ts or reason or fields.get("order_reference"):
+            active = fields.get("active")
+            if active is False or fields.get("released") is True:
+                return ConditionResult(status="NOT_MET", action="DELETE", rule_id=rid, reason="Legal hold was released")
+            if retention_ts or reason or fields.get("order_reference") or active is True:
                 return ConditionResult(
                     status="MET",
                     action=action,  # RETAIN
                     rule_id=rid,
                     reason=f"Active legal hold record present: {reason or retention_ts}",
                 )
-            if not fields:
-                return ConditionResult(status="UNKNOWN", action=None, rule_id=rid, reason="Fields unavailable for LEGAL_HOLD_RECORD")
-            return ConditionResult(status="NOT_MET", action="DELETE", rule_id=rid, reason="No active legal hold context")
+            return ConditionResult(status="UNKNOWN", action=None, rule_id=rid, reason="Legal hold status field unavailable for LEGAL_HOLD_RECORD")
 
         # Rule 14: BACKUP_ARCHIVE -> Restore access can be blocked
         if rid == "rule_14":
-            # Backup archive is retained, but access must be blocked
-            return ConditionResult(
-                status="MET",
-                action=action,  # RETAIN
-                rule_id=rid,
-                reason="Backup archive is retained while restore access is blocked",
-            )
+            if fields.get("blockable") is False:
+                return ConditionResult(status="NOT_MET", action="DELETE", rule_id=rid, reason="Restore access cannot be blocked")
+            if "restore_allowed" in fields or "blockable" in fields or "archive_path" in fields:
+                return ConditionResult(
+                    status="MET",
+                    action=action,  # RETAIN
+                    rule_id=rid,
+                    reason="Backup archive is retained while restore access is blocked",
+                )
+            return ConditionResult(status="UNKNOWN", action=None, rule_id=rid, reason="Restore fields unavailable for BACKUP_ARCHIVE")
 
         # Rule 15: ACCOUNT_TOMBSTONE -> Account is deleted and only stable internal user_id needed
         if rid == "rule_15":
-            return ConditionResult(
-                status="MET",
-                action=action,  # REDACT
-                rule_id=rid,
-                reason="Preserve stable internal user_id reference while direct identifiers are redacted",
-            )
+            has_uid = bool(fields.get("user_id") or fields.get("subject_reference"))
+            if has_uid:
+                # If direct identifiers are already absent, tombstone is compliant
+                has_direct_pii = bool(fields.get("email") or fields.get("phone") or fields.get("name"))
+                if not has_direct_pii:
+                    return ConditionResult(
+                        status="NOT_MET",
+                        action="RETAIN",
+                        rule_id=rid,
+                        reason="Account tombstone already compliant (stable reference preserved, direct identifiers removed)",
+                    )
+                return ConditionResult(
+                    status="MET",
+                    action=action,  # REDACT
+                    rule_id=rid,
+                    reason="Account tombstone contains direct identifiers that must be redacted",
+                )
+            return ConditionResult(status="UNKNOWN", action=None, rule_id=rid, reason="User reference unavailable for ACCOUNT_TOMBSTONE")
 
         return ConditionResult(status="UNKNOWN", action=None, rule_id=rid, reason=f"Unhandled rule {rid}")
 

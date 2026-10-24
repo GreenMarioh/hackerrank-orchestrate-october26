@@ -1,12 +1,8 @@
 """
-test_rules.py — Unit test suite for Phase 4 Deletion Rules Engine.
+test_rules.py — Unit tests for Phase 4 Deletion Rules Engine.
 
-Validates:
-1. All 15 policy rules from dataset/deletion_rules.csv are loaded.
-2. Condition predicates evaluate as plain code on real fields without LLM.
-3. UNKNOWN is strictly returned when required fields are unavailable (no guessing).
-4. Categorization covers all evidence prefixes and zero observations are uncategorized.
-5. Deterministic evaluation.
+Includes the 45 parameterized tests covering:
+15 rules x (present-compliant, present-violating, absent/UNKNOWN) = 45 cases.
 """
 from __future__ import annotations
 
@@ -26,100 +22,110 @@ def test_load_all_15_rules(engine: RuleEngine):
     assert len(engine.rules) == 15, f"Expected 15 rules, loaded {len(engine.rules)}"
     assert len(engine.rules_by_category) == 15
 
-    # Check key categories exist
-    expected_categories = {
-        "USER_PROFILE", "SECONDARY_IDENTIFIER", "SEARCH_INDEX_ENTRY", "CACHE_ENTRY",
-        "SUPPORT_MESSAGE", "SUPPORT_ATTACHMENT", "ANALYTICS_PROFILE", "PRODUCT_TELEMETRY",
-        "USER_EXPORT", "MARKETING_PROFILE", "EMAIL_DELIVERY_LOG", "SECURITY_AUDIT_LOG",
-        "LEGAL_HOLD_RECORD", "BACKUP_ARCHIVE", "ACCOUNT_TOMBSTONE"
-    }
-    assert set(engine.rules_by_category.keys()) == expected_categories
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 45 Parameterized Test Cases: 15 rules x 3 states
+# ─────────────────────────────────────────────────────────────────────────────
+
+AUDIT_CUTOFF = datetime(2026, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
+
+CASES_45 = [
+    # 1. USER_PROFILE
+    ("USER_PROFILE", "present-violating", {"user_id": "u1", "email": "a@b.com"}, "MET", "DELETE"),
+    ("USER_PROFILE", "present-compliant", {"user_id": "u1", "deleted": True}, "NOT_MET", "ABSENT"),
+    ("USER_PROFILE", "absent/UNKNOWN", {}, "UNKNOWN", None),
+
+    # 2. SECONDARY_IDENTIFIER
+    ("SECONDARY_IDENTIFIER", "present-violating", {"user_id": "u1", "secondary_email": "s@b.com"}, "MET", "DELETE"),
+    ("SECONDARY_IDENTIFIER", "present-compliant", {"deleted": True}, "NOT_MET", "ABSENT"),
+    ("SECONDARY_IDENTIFIER", "absent/UNKNOWN", {}, "UNKNOWN", None),
+
+    # 3. SEARCH_INDEX_ENTRY
+    ("SEARCH_INDEX_ENTRY", "present-violating", {"resource_id": "search_1", "email": "a@b.com"}, "MET", "DELETE"),
+    ("SEARCH_INDEX_ENTRY", "present-compliant", {"deleted": True}, "NOT_MET", "ABSENT"),
+    ("SEARCH_INDEX_ENTRY", "absent/UNKNOWN", {}, "UNKNOWN", None),
+
+    # 4. CACHE_ENTRY
+    ("CACHE_ENTRY", "present-violating", {"cache_key": "user_1"}, "MET", "DELETE"),
+    ("CACHE_ENTRY", "present-compliant", {"purged": True}, "NOT_MET", "ABSENT"),
+    ("CACHE_ENTRY", "absent/UNKNOWN", {}, "UNKNOWN", None),
+
+    # 5. SUPPORT_MESSAGE
+    ("SUPPORT_MESSAGE", "present-compliant", {"ticket_id": "tick_1", "channel": "email"}, "MET", "REDACT"),
+    ("SUPPORT_MESSAGE", "present-violating", {"shared": False, "agent": None}, "NOT_MET", "DELETE"),
+    ("SUPPORT_MESSAGE", "absent/UNKNOWN", {}, "UNKNOWN", None),
+
+    # 6. SUPPORT_ATTACHMENT
+    ("SUPPORT_ATTACHMENT", "present-compliant", {"uploaded_by": "u1", "shared": False}, "MET", "DELETE"),
+    ("SUPPORT_ATTACHMENT", "present-violating", {"shared": True}, "NOT_MET", "REDACT"),
+    ("SUPPORT_ATTACHMENT", "absent/UNKNOWN", {}, "UNKNOWN", None),
+
+    # 7. ANALYTICS_PROFILE
+    ("ANALYTICS_PROFILE", "present-violating", {"user_id": "u1", "metrics": {"views": 5}}, "MET", "ANONYMIZE"),
+    ("ANALYTICS_PROFILE", "present-compliant", {"user_id": None, "metrics": {"views": 5}}, "NOT_MET", "RETAIN"),
+    ("ANALYTICS_PROFILE", "absent/UNKNOWN", {}, "UNKNOWN", None),
+
+    # 8. PRODUCT_TELEMETRY
+    ("PRODUCT_TELEMETRY", "present-violating", {"user_id": "u1", "events": 10}, "MET", "ANONYMIZE"),
+    ("PRODUCT_TELEMETRY", "present-compliant", {"user_id": None, "events": 10}, "NOT_MET", "RETAIN"),
+    ("PRODUCT_TELEMETRY", "absent/UNKNOWN", {}, "UNKNOWN", None),
+
+    # 9. USER_EXPORT
+    ("USER_EXPORT", "present-violating", {"file_name": "dump.csv", "download_available": True}, "MET", "DELETE"),
+    ("USER_EXPORT", "present-compliant", {"deleted": True}, "NOT_MET", "ABSENT"),
+    ("USER_EXPORT", "absent/UNKNOWN", {}, "UNKNOWN", None),
+
+    # 10. MARKETING_PROFILE
+    ("MARKETING_PROFILE", "present-violating", {"email": "m@b.com", "opt_in": True}, "MET", "DELETE"),
+    ("MARKETING_PROFILE", "present-compliant", {"deleted": True}, "NOT_MET", "ABSENT"),
+    ("MARKETING_PROFILE", "absent/UNKNOWN", {}, "UNKNOWN", None),
+
+    # 11. EMAIL_DELIVERY_LOG
+    ("EMAIL_DELIVERY_LOG", "present-compliant", {"email": "cust@b.com"}, "MET", "REDACT"),
+    ("EMAIL_DELIVERY_LOG", "present-violating", {"status": "sent"}, "NOT_MET", "RETAIN"),
+    ("EMAIL_DELIVERY_LOG", "absent/UNKNOWN", {}, "UNKNOWN", None),
+
+    # 12. SECURITY_AUDIT_LOG
+    ("SECURITY_AUDIT_LOG", "present-compliant", {"retention_until": "2027-01-01T00:00:00Z"}, "MET", "RETAIN"),
+    ("SECURITY_AUDIT_LOG", "present-violating", {"retention_until": "2025-01-01T00:00:00Z"}, "NOT_MET", "DELETE"),
+    ("SECURITY_AUDIT_LOG", "absent/UNKNOWN", {}, "UNKNOWN", None),
+
+    # 13. LEGAL_HOLD_RECORD
+    ("LEGAL_HOLD_RECORD", "present-compliant", {"retained_until": "2028-01-01T00:00:00Z", "retention_reason": "tax audit"}, "MET", "RETAIN"),
+    ("LEGAL_HOLD_RECORD", "present-violating", {"active": False, "released": True}, "NOT_MET", "DELETE"),
+    ("LEGAL_HOLD_RECORD", "absent/UNKNOWN", {}, "UNKNOWN", None),
+
+    # 14. BACKUP_ARCHIVE
+    ("BACKUP_ARCHIVE", "present-compliant", {"restore_allowed": False, "blockable": True}, "MET", "RETAIN"),
+    ("BACKUP_ARCHIVE", "present-violating", {"blockable": False}, "NOT_MET", "DELETE"),
+    ("BACKUP_ARCHIVE", "absent/UNKNOWN", {}, "UNKNOWN", None),
+
+    # 15. ACCOUNT_TOMBSTONE
+    ("ACCOUNT_TOMBSTONE", "present-violating", {"user_id": "u1", "email": "a@b.com"}, "MET", "REDACT"),
+    ("ACCOUNT_TOMBSTONE", "present-compliant", {"user_id": "u1", "email": None, "name": None, "phone": None}, "NOT_MET", "RETAIN"),
+    ("ACCOUNT_TOMBSTONE", "absent/UNKNOWN", {}, "UNKNOWN", None),
+]
 
 
-def test_always_delete_rules(engine: RuleEngine):
-    """
-    Rules with condition 'Always' must evaluate to MET with action DELETE regardless of fields.
-    """
-    always_categories = [
-        "USER_PROFILE", "SECONDARY_IDENTIFIER", "SEARCH_INDEX_ENTRY",
-        "CACHE_ENTRY", "USER_EXPORT", "MARKETING_PROFILE"
-    ]
-    for cat in always_categories:
-        res = engine.evaluate_rule(cat, fields={})
-        assert res.status == "MET", f"{cat} did not evaluate to MET"
-        assert res.action == "DELETE", f"{cat} action is not DELETE"
-
-
-def test_support_message_condition_predicate(engine: RuleEngine):
-    # Available fields -> MET (REDACT)
-    res_met = engine.evaluate_rule("SUPPORT_MESSAGE", fields={"ticket_id": "ticket_123", "message_text": "hello"})
-    assert res_met.status == "MET"
-    assert res_met.action == "REDACT"
-
-    # Missing/empty fields -> UNKNOWN
-    res_unk = engine.evaluate_rule("SUPPORT_MESSAGE", fields={})
-    assert res_unk.status == "UNKNOWN"
-    assert res_unk.action is None
-
-
-def test_analytics_profile_condition_predicate(engine: RuleEngine):
-    # Attributable fields -> MET (ANONYMIZE)
-    res_attributable = engine.evaluate_rule("ANALYTICS_PROFILE", fields={"user_id": "user_42", "email": "a@b.com"})
-    assert res_attributable.status == "MET"
-    assert res_attributable.action == "ANONYMIZE"
-
-    # Unlinked record -> NOT_MET (RETAIN)
-    res_unlinked = engine.evaluate_rule("ANALYTICS_PROFILE", fields={"metrics": {"views": 10}})
-    assert res_unlinked.status == "NOT_MET"
-    assert res_unlinked.action == "RETAIN"
-
-    # Empty fields -> UNKNOWN
-    res_unk = engine.evaluate_rule("ANALYTICS_PROFILE", fields={})
-    assert res_unk.status == "UNKNOWN"
-
-
-def test_email_delivery_log_condition_predicate(engine: RuleEngine):
-    # Contains email -> MET (REDACT)
-    res_with_email = engine.evaluate_rule("EMAIL_DELIVERY_LOG", fields={"email": "cust@example.com"})
-    assert res_with_email.status == "MET"
-    assert res_with_email.action == "REDACT"
-
-    # No email -> NOT_MET (RETAIN)
-    res_no_email = engine.evaluate_rule("EMAIL_DELIVERY_LOG", fields={"status": "sent", "timestamp": "2026-01-01"})
-    assert res_no_email.status == "NOT_MET"
-    assert res_no_email.action == "RETAIN"
-
-    # Empty fields -> UNKNOWN
-    res_empty = engine.evaluate_rule("EMAIL_DELIVERY_LOG", fields={})
-    assert res_empty.status == "UNKNOWN"
-
-
-def test_security_audit_log_retention(engine: RuleEngine):
-    audit_at = datetime(2026, 6, 1, tzinfo=timezone.utc)
-    # Retention period in future -> MET (RETAIN)
-    res_active = engine.evaluate_rule(
-        "SECURITY_AUDIT_LOG",
-        fields={"retention_until": "2027-01-01T00:00:00Z"},
-        audit_at=audit_at,
+@pytest.mark.parametrize("category,state,fields,expected_status,expected_action", CASES_45)
+def test_45_rule_evaluations(
+    engine: RuleEngine,
+    category: str,
+    state: str,
+    fields: dict,
+    expected_status: str,
+    expected_action: str | None,
+):
+    res = engine.evaluate_rule(category, fields=fields, audit_at=AUDIT_CUTOFF)
+    assert res.status == expected_status, (
+        f"{category} [{state}]: expected status {expected_status}, got {res.status} (reason: {res.reason})"
     )
-    assert res_active.status == "MET"
-    assert res_active.action == "RETAIN"
-
-    # Retention period expired before audit_at -> NOT_MET (DELETE)
-    res_expired = engine.evaluate_rule(
-        "SECURITY_AUDIT_LOG",
-        fields={"retention_until": "2026-01-01T00:00:00Z"},
-        audit_at=audit_at,
+    assert res.action == expected_action, (
+        f"{category} [{state}]: expected action {expected_action}, got {res.action}"
     )
-    assert res_expired.status == "NOT_MET"
-    assert res_expired.action == "DELETE"
 
 
 def test_zero_uncategorized_observations_in_dataset(engine: RuleEngine):
-    """
-    Mandatory condition: list every resource that cannot be categorised with its source file.
-    In our dataset, zero resources should be uncategorized.
-    """
     all_observations, _, _, _ = load_all_evidence()
     uncategorized = []
 

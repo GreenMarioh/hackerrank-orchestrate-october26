@@ -126,6 +126,7 @@ def load_pdf_evidence(
             rid = f"doc_{file_id}_{idx}"
             system_id = _infer_system(rid, full_text[:200])
             fields = {
+                "source_text": full_text[:500],
                 "all_user_ids": user_ids,
                 "all_emails": [e.lower() for e in emails],
                 "all_phones": phones,
