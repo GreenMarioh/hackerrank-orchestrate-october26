@@ -117,12 +117,10 @@ class IdentityResolver:
         # 1. Direct match on current email snapshot
         matched_uid = self.current_email_to_uid.get(norm_email)
 
-        # 2. Match on historical email in user_audit_log (event_time <= audit_at)
+        # 2. Match on historical email in user_audit_log
         audit_ids_used: list[str] = []
         if not matched_uid:
             for ev in self.audit_events:
-                if ev["event_time"] > audit_at:
-                    continue
                 if ev["field_name"] == "email":
                     old_e = ev["old_value"].strip().lower()
                     new_e = ev["new_value"].strip().lower()
@@ -138,8 +136,6 @@ class IdentityResolver:
         # 4. Match on historical email_hash in audit log
         if not matched_uid:
             for ev in self.audit_events:
-                if ev["event_time"] > audit_at:
-                    continue
                 if ev["field_name"] == "email_hash":
                     if email_hash in (ev["old_value"].strip().lower(), ev["new_value"].strip().lower()):
                         matched_uid = ev["user_id"]
@@ -159,7 +155,8 @@ class IdentityResolver:
                 evidence_audit_ids=(),
             )
 
-        # Assemble the full identity bundle for matched_uid as of audit_at
+        # Assemble the full identity bundle for matched_uid
+        # Note: audit_at cutoff applies to evidence and resource state, NOT to deciding who the person is.
         user_record = self.identities.get(matched_uid, {})
         current_email = user_record.get("email", norm_email)
         current_name = user_record.get("name")
@@ -177,11 +174,9 @@ class IdentityResolver:
         for e in all_emails:
             all_hashes.add(_sha256(e))
 
-        # Reconstruct history from user_audit_log strictly up to audit_at
+        # Reconstruct full alias set across all audit events for this user
         user_events = self.audit_events_by_user.get(matched_uid, [])
         for ev in user_events:
-            if ev["event_time"] > audit_at:
-                continue
 
             fname = ev["field_name"]
             old_val = ev["old_value"].strip()

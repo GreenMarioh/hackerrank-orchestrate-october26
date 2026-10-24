@@ -42,15 +42,10 @@ def link_from_catalog_events(
         if ev_dt > audit_at:
             continue
 
-        # Check if details, subject_id, or subject_email match any subject identifier
+        # Check if details matches any subject identifier
         details = ev.get("details", "").lower()
-        subj_id = ev.get("subject_id", "").lower()
-        subj_email = ev.get("subject_email", "").lower()
 
-        match = any(
-            ident in details or ident == subj_id or ident == subj_email
-            for ident in norm_ids
-        )
+        match = any(ident in details for ident in norm_ids)
         if match:
             linked.append(ev)
 

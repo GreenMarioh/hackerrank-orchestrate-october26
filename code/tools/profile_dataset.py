@@ -545,12 +545,18 @@ def _load_activity_by_case(
 
     case_events: dict[str, list[dict[str, str]]] = defaultdict(list)
     for ev in activity:
-        # Try matching by subject_email or subject_id in activity
-        subj_email = ev.get("subject_email", "").strip().lower()
-        subj_id = ev.get("subject_id", "").strip()
-        case_id = email_to_case.get(subj_email) or uid_to_case.get(subj_id)
-        if case_id:
-            case_events[case_id].append(ev)
+        details = ev.get("details", "").lower()
+        matched = False
+        for email, cid in email_to_case.items():
+            if email in details:
+                case_events[cid].append(ev)
+                matched = True
+                break
+        if not matched:
+            for uid, cid in uid_to_case.items():
+                if uid.lower() in details:
+                    case_events[cid].append(ev)
+                    break
     return dict(case_events)
 
 

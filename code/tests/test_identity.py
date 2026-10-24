@@ -114,27 +114,39 @@ def test_historical_email_resolution(resolver: IdentityResolver):
     assert target_audit_id in ident.evidence_audit_ids
 
 
-def test_anti_leak_cutoff(resolver: IdentityResolver):
+def test_email_change_after_audit_at_still_resolves_user(resolver: IdentityResolver):
     """
-    Verify that an audit log event occurring AFTER audit_at is strictly ignored:
-    the historical email must NOT resolve to the user_id if audit_at < event_time.
+    User rule: where an email change A->B happens AFTER audit_at and the request uses A,
+    the request email must STILL resolve to the user.
+    The audit_at cutoff applies to evidence and state, not to deciding who the person is.
     """
-    # Find an audit event where old_value is historical-only
+    # Find an audit event where email changed from A (old_value) to B (new_value)
+    # and A is not in current identities snapshot (B is current).
+    target_ev = None
     for ev in resolver.audit_events:
-        if ev["field_name"] == "email" and ev["old_value"]:
+        if ev["field_name"] == "email" and ev["old_value"] and ev["new_value"]:
             old_e = ev["old_value"].lower().strip()
             curr_e = resolver.identities[ev["user_id"]]["email"].lower()
             if old_e != curr_e and old_e not in resolver.current_email_to_uid:
-                event_time = ev["event_time"]
-                # Set audit_at strictly BEFORE event_time
-                before_ts = datetime.fromtimestamp(event_time.timestamp() - 3600, tz=timezone.utc)
-                ident = resolver.resolve(old_e, before_ts)
-                # Should NOT match the user
-                assert ident.user_id != ev["user_id"], (
-                    f"Temporal leak! Email {old_e} resolved to {ev['user_id']} "
-                    f"even though audit_at {before_ts} is before event_time {event_time}"
-                )
+                target_ev = ev
                 break
+
+    assert target_ev is not None, "Could not find an email change event in user_audit_log"
+
+    event_time = target_ev["event_time"]
+    old_email_a = target_ev["old_value"].lower().strip()
+    target_uid = target_ev["user_id"]
+
+    # Set audit_at strictly BEFORE the email change event_time
+    audit_at_before_change = datetime.fromtimestamp(event_time.timestamp() - 7200, tz=timezone.utc)
+
+    # Resolving with email A and audit_at < event_time MUST still resolve to target_uid!
+    ident = resolver.resolve(old_email_a, audit_at_before_change)
+
+    assert ident.user_id == target_uid, (
+        f"Request email {old_email_a} failed to resolve to {target_uid} when audit_at is before event_time!"
+    )
+    assert old_email_a in ident.all_emails
 
 
 def test_identity_determinism(resolver: IdentityResolver):

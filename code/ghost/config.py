@@ -9,8 +9,11 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 # ── Repo layout ────────────────────────────────────────────────────────────────
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent   # …/hackerrank-…-main/
+load_dotenv(REPO_ROOT / ".env")
 DATASET_DIR = REPO_ROOT / "dataset"
 EVIDENCE_DIR = DATASET_DIR / "evidence"
 CODE_DIR = REPO_ROOT / "code"
@@ -38,9 +41,18 @@ SAMPLE_OUTPUT_CSV   = DATASET_DIR / "sample_output.csv"
 CASE_ID_SORT_KEY = str   # plain string sort
 
 # ── Model / LLM settings (read from env) ──────────────────────────────────────
-LLM_API_KEY   = os.getenv("LLM_API_KEY", "")
-LLM_MODEL     = os.getenv("LLM_MODEL", "gemini-2.0-flash")
-SKIP_IMAGES   = os.getenv("SKIP_IMAGE_EXTRACTION", "").strip() in ("1", "true", "yes")
+def get_llm_api_key() -> str:
+    return os.getenv("LLM_API_KEY", "").strip()
+
+def get_llm_model() -> str:
+    return os.getenv("LLM_MODEL", "gemini-2.0-flash").strip()
+
+def is_skip_images() -> bool:
+    return os.getenv("SKIP_IMAGE_EXTRACTION", "").strip().lower() in ("1", "true", "yes")
+
+LLM_API_KEY   = get_llm_api_key()
+LLM_MODEL     = get_llm_model()
+SKIP_IMAGES   = is_skip_images()
 
 # ── Linking / state constants ─────────────────────────────────────────────────
 # Candidate time-window radius around reported_at (seconds).  H1 to be confirmed.
