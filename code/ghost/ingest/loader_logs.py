@@ -1,0 +1,234 @@
+"""
+loader_logs.py — Loads log evidence files into normalized Observations.
+
+Supports all 3 dialects:
+1. key_value
+2. cloud_runtime (with message= field and escaped quotes)
+3. syslog_rfc5424 (with optional prepended ISO ingestion timestamp)
+"""
+from __future__ import annotations
+
+import re
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+from ghost.models import Observation, UnparsedEvidenceRecord
+
+
+def _parse_iso(ts_str: str | None) -> datetime | None:
+    if not ts_str:
+        return None
+    s = str(ts_str).strip()
+    for fmt in (
+        "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+        "%Y-%m-%d %H:%M:%S%z",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+    ):
+        try:
+            dt = datetime.strptime(s, fmt)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+        except ValueError:
+            continue
+    try:
+        return datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _parse_key_value(line: str) -> dict[str, str]:
+    result: dict[str, str] = {}
+    pattern = re.compile(r'(\w+)=("(?:[^"\\]|\\.)*"|[^\s,]+)')
+    for m in pattern.finditer(line):
+        k, v = m.group(1), m.group(2)
+        if v.startswith('"') and v.endswith('"'):
+            v = v[1:-1].replace('\\"', '"').replace('\\\\', '\\')
+        result[k] = v
+    return result
+
+
+def _parse_syslog_rfc5424(line: str) -> dict[str, str]:
+    # Handles optional prepended ISO ingestion timestamp
+    pattern = re.compile(
+        r"^(?:\S+T\S+\s+)?"
+        r"<(\d+)>(\d+)\s+"
+        r"(\S+)\s+"
+        r"(\S+)\s+"
+        r"(\S+)\s+"
+        r"(\S+)\s+"
+        r"(\S+)\s+"
+        r"(?:\[.*?\]\s*)?"
+        r"(.*)?$",
+        re.DOTALL,
+    )
+    m = pattern.match(line)
+    if not m:
+        return _parse_key_value(line)
+    fields = {
+        "priority": m.group(1),
+        "version": m.group(2),
+        "timestamp": m.group(3),
+        "hostname": m.group(4),
+        "app_name": m.group(5),
+        "proc_id": m.group(6),
+        "msg_id": m.group(7),
+        "message": (m.group(8) or "").strip(),
+    }
+    # Also parse any key=value inside the message
+    msg = fields["message"]
+    if msg:
+        kv = _parse_key_value(msg)
+        fields.update(kv)
+    return fields
+
+
+def _parse_cloud_runtime(line: str) -> dict[str, str]:
+    return _parse_key_value(line)
+
+
+def _detect_dialect(line: str) -> str:
+    if re.match(r"^(?:\S+T\S+\s+)?<\d+>\d+\s+", line):
+        return "syslog_rfc5424"
+    has_ts = bool(
+        re.match(r"^timestamp=\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", line)
+        or re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", line)
+    )
+    if has_ts and "message=" in line:
+        return "cloud_runtime"
+    if has_ts:
+        return "key_value"
+    return "unknown"
+
+
+def _infer_system(service_hint: str | None, resource_id: str) -> str:
+    s = (service_hint or "").lower()
+    r = resource_id.lower()
+    if r.startswith("account_") or "account" in s:
+        return "account_service"
+    if r.startswith("search_") or "search" in s:
+        return "search_service"
+    if r.startswith("analytics_") or "analytics" in s:
+        return "analytics_platform"
+    if r.startswith("support_") or "support" in s:
+        return "support_platform"
+    if r.startswith("export_") or "export" in s:
+        return "export_service"
+    if r.startswith("data_flow_") or "integration" in s or "connector" in s:
+        return "integration_service"
+    if r.startswith("backup_") or "backup" in s:
+        return "backup_service"
+    if r.startswith("audit_record_") or "security" in s:
+        return "security_service"
+    if r.startswith("tombstone_") or "identity" in s:
+        return "identity_service"
+    if r.startswith("object_") or "storage" in s:
+        return "object_storage"
+    if r.startswith("marketing_") or "marketing" in s:
+        return "marketing_platform"
+    if r.startswith("cache_") or "cache" in s:
+        return "cache_service"
+    if r.startswith("email_delivery_") or "email_delivery" in s:
+        return "email_delivery_service"
+    if r.startswith("legal_hold_") or "legal" in s:
+        return "legal_service"
+    return s or "log_service"
+
+
+def load_log_evidence(
+    file_path: Path,
+    file_id: str,
+    manifest_captured_at: datetime,
+) -> tuple[list[Observation], list[UnparsedEvidenceRecord]]:
+    observations: list[Observation] = []
+    unparsed: list[UnparsedEvidenceRecord] = []
+
+    try:
+        lines = file_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except Exception as exc:
+        unparsed.append(UnparsedEvidenceRecord(file_id, str(file_path), "Log file read error", str(exc)))
+        return observations, unparsed
+
+    for idx, raw_line in enumerate(lines):
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        dialect = _detect_dialect(line)
+        if dialect == "syslog_rfc5424":
+            parsed = _parse_syslog_rfc5424(line)
+        elif dialect == "cloud_runtime":
+            parsed = _parse_cloud_runtime(line)
+        else:
+            parsed = _parse_key_value(line)
+
+        # Extract timestamp
+        ts = None
+        for t_key in ("timestamp", "time", "date"):
+            if t_key in parsed:
+                ts = _parse_iso(parsed[t_key])
+                if ts:
+                    break
+        if not ts:
+            # Check if line starts with an ISO timestamp
+            m = re.match(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?)", line)
+            if m:
+                ts = _parse_iso(m.group(1))
+        if not ts:
+            ts = manifest_captured_at
+
+        # Extract resource_id or identifiers
+        rid = parsed.get("resource_id")
+        if not rid:
+            # Check regex for known resource prefix patterns in line
+            m_res = re.search(
+                r"\b(account_\w+|search_\w+|support_\w+|analytics_\w+|export_\w+|data_flow_\w+|backup_\w+|audit_record_\w+|tombstone_\w+|object_\w+|marketing_\w+|cache_\w+|email_delivery_\w+|legal_hold_\w+)\b",
+                line,
+            )
+            if m_res:
+                rid = m_res.group(1)
+
+        # Extract user identifiers
+        uid = parsed.get("user_id") or parsed.get("customer_reference") or parsed.get("subject_reference") or parsed.get("subject_id")
+        email = parsed.get("email") or parsed.get("owner_email") or parsed.get("customer_email") or parsed.get("subject_email")
+        phone = parsed.get("phone") or parsed.get("owner_phone")
+
+        if not rid and not uid and not email:
+            # Line has no personal data or resource reference (e.g. system heartbeat)
+            continue
+
+        if not rid:
+            rid = f"log_entry_{file_id}_{idx}"
+
+        system_id = _infer_system(parsed.get("service") or parsed.get("app_name") or parsed.get("function"), rid)
+
+        fields: dict[str, Any] = dict(parsed)
+        if uid:
+            fields["user_id"] = str(uid).strip()
+        if email:
+            fields["email"] = str(email).strip().lower()
+        if phone:
+            fields["phone"] = str(phone).strip()
+
+        obs_id = f"{file_id}:line_{idx}:{rid}"
+        observations.append(
+            Observation(
+                obs_id=obs_id,
+                file_id=file_id,
+                captured_at=ts,
+                system_id=system_id,
+                store="log",
+                resource_id=rid,
+                category=None,
+                fields=fields,
+                present=True,
+            )
+        )
+
+    if not observations and not unparsed:
+        unparsed.append(UnparsedEvidenceRecord(file_id, str(file_path), "Zero observation lines extracted from log file"))
+
+    return observations, unparsed
