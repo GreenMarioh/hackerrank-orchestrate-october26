@@ -79,6 +79,16 @@ def _parse_key_value(line: str) -> dict[str, str]:
             if len(parts) >= 5 and "event" not in result and not "=" in parts[4]:
                 result["event"] = parts[4]
 
+    # Extract bracketed positional tokens: [LEVEL] [service] [trace_id]
+    brackets = re.findall(r"\[([^\]]+)\]", line)
+    for b in brackets:
+        if b in ("DEBUG", "INFO", "WARN", "WARNING", "ERROR", "CRITICAL") and "level" not in result:
+            result["level"] = b
+        elif b.startswith("tr-") and "trace_id" not in result:
+            result["trace_id"] = b
+        elif ("service" in b or "platform" in b) and "service" not in result:
+            result["service"] = b
+
     return result
 
 
@@ -109,6 +119,11 @@ def _parse_syslog_rfc5424(line: str) -> dict[str, str]:
         "msg_id": m.group(7),
         "message": (m.group(8) or "").strip(),
     }
+    if fields.get("app_name", "").startswith("tr-"):
+        fields["trace_id"] = fields["app_name"]
+    if "service" not in fields and fields.get("hostname"):
+        fields["service"] = fields["hostname"]
+
     # Also parse any key=value inside the message
     msg = fields["message"]
     if msg:
@@ -219,7 +234,13 @@ def load_log_evidence(
             uid = parsed.get("user_id") or parsed.get("customer_reference") or parsed.get("subject_reference") or parsed.get("subject_ref") or parsed.get("correlation_key")
             if uid:
                 trace_to_uid[tr] = str(uid).strip()
-            email = parsed.get("email") or parsed.get("lookup_key")
+            email = (
+                parsed.get("email")
+                or parsed.get("lookup_key")
+                or parsed.get("subject_key")
+                or parsed.get("customer_email")
+                or parsed.get("owner_email")
+            )
             if email and "@" in str(email):
                 trace_to_email[tr] = str(email).strip().lower()
 
@@ -261,6 +282,7 @@ def load_log_evidence(
             or parsed.get("customer_email")
             or parsed.get("subject_email")
             or parsed.get("lookup_key")
+            or parsed.get("subject_key")
             or (trace_to_email.get(tr) if tr else None)
         )
         phone = parsed.get("phone") or parsed.get("owner_phone")
