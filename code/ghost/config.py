@@ -27,6 +27,7 @@ SYSTEM_ACTIVITY_CSV   = DATASET_DIR / "system_activity.csv"
 
 # ── Dev-only files (evaluation harness only — never read by main.py prediction) ──
 SAMPLE_REQUESTS_CSV = DATASET_DIR / "sample_deletion_requests.csv"
+SAMPLE_DELETION_REQUESTS_CSV = SAMPLE_REQUESTS_CSV
 SAMPLE_OUTPUT_CSV   = DATASET_DIR / "sample_output.csv"
 
 # ── Output sort ────────────────────────────────────────────────────────────────
