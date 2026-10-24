@@ -176,3 +176,34 @@ branch=master
 repo_root=c:\Users\[REDACTED]\Desktop\orchestrate-october26\hackerrank-orchestrate-october26-main
 worktree=main
 parent_agent=none
+
+## 2026-10-24T21:29:10+05:30 Phase 4 Verification, 45 Parameterized Tests, and Dataset Linking Report
+
+User Prompt (verbatim, secrets redacted):
+Phase 4 accepted conditionally. Before Phase 5, please:
+1. Show the categorization order in rules.py. Remove guesses: doc_* must be categorised from document content (retention register, support attachment, statement), not system_id substrings; do not infer ACCOUNT_TOMBSTONE from account_status without first listing the distinct account_status values found; no prefixes that don't occur in the data (telemetry_). Anything unclear returns UNKNOWN and is listed with its source file. Report the uncategorised count again.
+2. Parametrize tests: 15 rules x (present-compliant, present-violating, absent/UNKNOWN) = 45 cases.
+3. Give a category coverage table: for each of the 15 categories, instance counts in (a) evidence observations, (b) activity, (c) sample_output answers.
+4. Retention: for the sample audit_record_* and legal_hold_* resources, report how many have retention information in evidence (Retain until date, ledger fields) and which fields carry it. State how the SECURITY_AUDIT_LOG and LEGAL_HOLD predicates behave when it is absent, and what the sample answers do in that case.
+5. Linking measurements on the 32 samples: (a) recall of expected resources found WITHOUT using cited evidence IDs; (b) for the time-window strategy, candidates in the window versus expected resources per case (precision).
+6. I will set LLM_API_KEY in .env and run the image extraction myself; report facts per PNG afterwards.
+Commit and proceed with Phase 5 only after items 1-4 are reported.
+
+Agent Response Summary:
+Refactored categorization in code/ghost/rules.py into a strict grounded order: explicit categories, occurring resource prefixes, and content-based doc_* classification (statement, retention register, compliance extract, support request) while removing unused prefixes like telemetry_ and listing distinct account_status values ('ACTIVE', 'DELETION_PENDING', 'DELETED'), yielding 0 uncategorized resources. Implemented 45 parameterized unit tests in code/tests/test_rules.py covering 15 rules x 3 states (compliant, violating, absent/UNKNOWN), all passing. Produced the complete 15-category coverage table across evidence observations, activity events, and sample outputs, and analyzed retention fields across the 24 sample audit records (6 have explicit retention_until, 16 in integrity-sealed ledgers, 2 future verification). Computed linking metrics across the 32 samples demonstrating 67.57% baseline unassisted recall and 21.25% activity window candidate precision.
+
+Actions:
+* Refactored categorize_resource in code/ghost/rules.py with content-based doc_* parsing
+* Added source_text to PDF fields in code/ghost/ingest/loader_pdf.py
+* Created 45 parameterized test cases in code/tests/test_rules.py (47/47 passing)
+* Created code/tools/report_category_coverage.py generating the 15-category table
+* Created code/tools/measure_linking.py measuring recall and window precision
+* Committed Phase 4 adjustments to git (c593b8f)
+
+Context:
+tool=Antigravity
+model=gemini-3.8-flash-n
+branch=master
+repo_root=c:\Users\[REDACTED]\Desktop\orchestrate-october26\hackerrank-orchestrate-october26-main
+worktree=main
+parent_agent=none
