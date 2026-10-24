@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -87,7 +88,7 @@ class EvidenceLinker:
         linked: dict[str, LinkedResource] = {}
         anchor_times: list[datetime] = []
 
-        # Build alias set for subject
+        # Build alias set and compiled word-boundary patterns for subject
         aliases: set[str] = {subject.user_id.lower()}
         for e in subject.all_emails:
             aliases.add(e.lower())
@@ -95,8 +96,14 @@ class EvidenceLinker:
             aliases.add(p.lower())
         for h in subject.all_hashes:
             aliases.add(h.lower())
-        if subject.name:
+        if subject.name and len(subject.name) >= 3:
             aliases.add(subject.name.lower())
+
+        alias_patterns: list[tuple[str, re.Pattern]] = [
+            (a, re.compile(r"\b" + re.escape(a) + r"\b"))
+            for a in aliases
+            if len(a) >= 3
+        ]
 
         # -------------------------------------------------------------
         # 1. ANCHOR PHASE: Evidence observations matching aliases <= audit_at
@@ -105,11 +112,11 @@ class EvidenceLinker:
             if obs.captured_at > audit_at:
                 continue
 
-            # Check if any field contains an alias
+            # Check if any field contains an alias (word-boundary safe)
             fields_str = json.dumps(obs.fields).lower()
             matched_alias = None
-            for a in aliases:
-                if a in fields_str:
+            for a, pattern in alias_patterns:
+                if pattern.search(fields_str):
                     matched_alias = a
                     break
 
@@ -142,8 +149,8 @@ class EvidenceLinker:
                 continue
 
             matched_alias = None
-            for a in aliases:
-                if a in act["details_lower"]:
+            for a, pattern in alias_patterns:
+                if pattern.search(act["details_lower"]):
                     matched_alias = a
                     break
 
