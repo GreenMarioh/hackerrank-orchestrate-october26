@@ -25,6 +25,7 @@ class Observation:
     category: str | None   # data category from deletion_rules.csv (or None until classified)
     fields: dict[str, Any] # normalized fields: user_id, emails, phones, email_hash, status, toggles, etc.
     present: bool = True   # True if snapshot shows record exists; False if explicit deletion tombstone/absent
+    file_captured_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -41,6 +42,7 @@ class SnapshotCoverage:
     store: str
     scope_name: str                     # Table name, collection name, or file section
     resource_ids: frozenset[str]        # All resource_ids present in this scope (may be empty)
+    file_captured_at: datetime | None = None
 
 
 @dataclass(frozen=True)

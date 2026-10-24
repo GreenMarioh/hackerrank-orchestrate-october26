@@ -142,6 +142,7 @@ def load_json_evidence(
                 continue
             collection = snap.get("collection", "default")
             data_store = snap.get("data_store", "export")
+            snap_time = _parse_iso(snap.get("captured_at")) or file_captured_at
             records = snap.get("records", [])
 
             snap_rids: set[str] = set()
@@ -161,24 +162,26 @@ def load_json_evidence(
                     Observation(
                         obs_id=obs_id,
                         file_id=file_id,
-                        captured_at=file_captured_at,
+                        captured_at=snap_time,
                         system_id=system_id,
                         store=data_store,
                         resource_id=rid,
                         category=category,
                         fields=fields,
                         present=True,
+                        file_captured_at=manifest_captured_at,
                     )
                 )
 
             coverages.append(
                 SnapshotCoverage(
                     file_id=file_id,
-                    captured_at=file_captured_at,
+                    captured_at=snap_time,
                     system_id=snap_sys,
                     store=data_store,
                     scope_name=collection,
                     resource_ids=frozenset(snap_rids),
+                    file_captured_at=manifest_captured_at,
                 )
             )
 
@@ -210,24 +213,26 @@ def load_json_evidence(
                         Observation(
                             obs_id=obs_id,
                             file_id=file_id,
-                            captured_at=file_captured_at,
+                            captured_at=rec_time,
                             system_id=system_id,
                             store=svc_name,
                             resource_id=rid,
                             category=category,
                             fields=fields,
                             present=present,
+                            file_captured_at=manifest_captured_at,
                         )
                     )
 
                 coverages.append(
                     SnapshotCoverage(
                         file_id=file_id,
-                        captured_at=file_captured_at,
+                        captured_at=rec_time,
                         system_id=coll_sys,
                         store=svc_name,
                         scope_name=f"{svc_name}.{coll_name}",
                         resource_ids=frozenset(coll_rids),
+                        file_captured_at=manifest_captured_at,
                     )
                 )
 
@@ -261,6 +266,7 @@ def load_json_evidence(
                     category=category,
                     fields=fields,
                     present=True,
+                    file_captured_at=manifest_captured_at,
                 )
             )
 
@@ -272,6 +278,7 @@ def load_json_evidence(
                 store="export",
                 scope_name=collection,
                 resource_ids=frozenset(rec_rids),
+                file_captured_at=manifest_captured_at,
             )
         )
 

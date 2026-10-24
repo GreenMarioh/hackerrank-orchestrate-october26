@@ -150,3 +150,113 @@ def test_sample_state_determination_accuracy(state_env):
 
     assert evaluated_cases == 32
     assert consistent_states >= 70, f"Expected at least 70 evaluated step states, got {consistent_states}"
+
+
+def test_temporal_anti_leak_future_bundle_not_citable():
+    """
+    Test 4: Temporal anti-leak: A snapshot bundle exported/captured after audit_at
+    must never be cited in a finding or verification, even if an inner observation
+    shares the exact cutoff time.
+    """
+    past_snap_time = datetime(2026, 9, 15, 12, 0, 0, tzinfo=timezone.utc)
+    future_file_time = datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc)
+    audit_at = datetime(2026, 9, 15, 12, 0, 0, tzinfo=timezone.utc)
+
+    # Observation from a future bundle (file_captured_at > audit_at)
+    obs_future = Observation(
+        obs_id="future_bundle:1",
+        file_id="evidence_future",
+        captured_at=past_snap_time,
+        file_captured_at=future_file_time,
+        system_id="account_service",
+        store="primary",
+        resource_id="acc_leak_test",
+        category="USER_PROFILE",
+        fields={"email": "alice@test.com"},
+        present=True,
+    )
+
+    # Observation from a valid pre-audit file
+    obs_valid = Observation(
+        obs_id="valid_file:1",
+        file_id="evidence_valid",
+        captured_at=datetime(2026, 9, 15, 11, 45, 0, tzinfo=timezone.utc),
+        file_captured_at=datetime(2026, 9, 15, 11, 45, 0, tzinfo=timezone.utc),
+        system_id="account_service",
+        store="primary",
+        resource_id="acc_leak_test",
+        category="USER_PROFILE",
+        fields={"email": "alice@test.com"},
+        present=True,
+    )
+
+    evaluator = StateEvaluator(observations=[obs_future, obs_valid], coverages=[])
+    dummy_subject = Identity(
+        user_id="user_test",
+        current_email="alice@test.com",
+        all_emails=frozenset({"alice@test.com"}),
+        all_phones=frozenset(),
+        all_hashes=frozenset(),
+        name="Alice",
+    )
+    linked = LinkedResource(
+        resource_id="acc_leak_test",
+        system_id="account_service",
+        category="USER_PROFILE",
+        confidence="HIGH",
+        evidence_ids=(),
+        first_seen=audit_at,
+        is_anchor=False,
+        rationale="Test resource",
+    )
+
+    state = evaluator.determine_resource_state(linked, dummy_subject, audit_at)
+    assert state.evidence_id == "evidence_valid"
+    assert state.evidence_id != "evidence_future"
+
+
+def test_observation_after_audit_at_ignored():
+    """
+    Test 5: Observations captured strictly after audit_at must be completely ignored.
+    """
+    audit_at = datetime(2026, 9, 15, 12, 0, 0, tzinfo=timezone.utc)
+    after_audit = datetime(2026, 9, 15, 12, 0, 1, tzinfo=timezone.utc)
+
+    obs_after = Observation(
+        obs_id="after:1",
+        file_id="evidence_after",
+        captured_at=after_audit,
+        file_captured_at=after_audit,
+        system_id="account_service",
+        store="primary",
+        resource_id="acc_cutoff_test",
+        category="USER_PROFILE",
+        fields={"email": "bob@test.com"},
+        present=True,
+    )
+
+    evaluator = StateEvaluator(observations=[obs_after], coverages=[])
+    dummy_subject = Identity(
+        user_id="user_bob",
+        current_email="bob@test.com",
+        all_emails=frozenset({"bob@test.com"}),
+        all_phones=frozenset(),
+        all_hashes=frozenset(),
+        name="Bob",
+    )
+    linked = LinkedResource(
+        resource_id="acc_cutoff_test",
+        system_id="account_service",
+        category="USER_PROFILE",
+        confidence="HIGH",
+        evidence_ids=(),
+        first_seen=audit_at,
+        is_anchor=False,
+        rationale="Test resource",
+    )
+
+    state = evaluator.determine_resource_state(linked, dummy_subject, audit_at)
+    # Since obs_after is > audit_at, it must be ignored completely, yielding UNKNOWN
+    assert state.overall_state == "UNKNOWN"
+    assert state.evidence_id == ""
+

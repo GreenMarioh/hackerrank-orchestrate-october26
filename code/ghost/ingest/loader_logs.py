@@ -7,7 +7,7 @@ Supports all 3 dialects:
 3. syslog_rfc5424 (with optional prepended ISO ingestion timestamp)
 """
 from __future__ import annotations
-
+import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -42,12 +42,27 @@ def _parse_iso(ts_str: str | None) -> datetime | None:
 
 def _parse_key_value(line: str) -> dict[str, str]:
     result: dict[str, str] = {}
+
+    # If line contains a JSON payload (e.g. ISO-timestamp {"severity":...})
+    brace_start = line.find("{")
+    brace_end = line.rfind("}")
+    if brace_start != -1 and brace_end != -1 and brace_end > brace_start:
+        try:
+            payload = json.loads(line[brace_start:brace_end + 1])
+            if isinstance(payload, dict):
+                for pk, pv in payload.items():
+                    if pv is not None:
+                        result[str(pk)] = str(pv)
+        except Exception:
+            pass
+
     pattern = re.compile(r'(\w+)=("(?:[^"\\]|\\.)*"|[^\s,]+)')
     for m in pattern.finditer(line):
         k, v = m.group(1), m.group(2)
         if v.startswith('"') and v.endswith('"'):
             v = v[1:-1].replace('\\"', '"').replace('\\\\', '\\')
-        result[k] = v
+        if k not in result:
+            result[k] = v
 
     # If line is pipe-delimited, extract positional tokens: ts | level | service | trace_id | event | kv...
     if "|" in line:
@@ -297,6 +312,7 @@ def load_log_evidence(
                 obs_id=obs_id,
                 file_id=file_id,
                 captured_at=ts,
+                file_captured_at=manifest_captured_at,
                 system_id=system_id,
                 store="log",
                 resource_id=rid,

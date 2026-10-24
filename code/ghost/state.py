@@ -30,6 +30,7 @@ class StoreState:
     state: str                 # PRESENT_IDENTIFIED | PRESENT_REDACTED | PRESENT_ANONYMIZED | ABSENT | UNKNOWN
     file_id: str               # file_id proving this state
     captured_at: datetime
+    file_captured_at: datetime
     details: dict[str, Any]
 
 
@@ -104,8 +105,17 @@ class StateEvaluator:
 
         # Evaluate each store's latest observation
         for store, store_obs_list in obs_by_store.items():
-            store_obs_list.sort(key=lambda x: x.captured_at)
-            latest_obs = store_obs_list[-1]
+            # For deciding the store's state and citation, prefer the latest observation whose file was captured <= audit_at
+            citable_in_store = [
+                o for o in store_obs_list
+                if (getattr(o, "file_captured_at", None) or o.captured_at) <= audit_at
+            ]
+            if citable_in_store:
+                citable_in_store.sort(key=lambda x: x.captured_at)
+                latest_obs = citable_in_store[-1]
+            else:
+                store_obs_list.sort(key=lambda x: x.captured_at)
+                latest_obs = store_obs_list[-1]
 
             if not latest_obs.present:
                 store_states.append(
@@ -114,6 +124,7 @@ class StateEvaluator:
                         state="ABSENT",
                         file_id=latest_obs.file_id,
                         captured_at=latest_obs.captured_at,
+                        file_captured_at=getattr(latest_obs, "file_captured_at", latest_obs.captured_at),
                         details={"present": False, "status": "NOT_FOUND"},
                     )
                 )
@@ -161,6 +172,7 @@ class StateEvaluator:
                     state=s_state,
                     file_id=latest_obs.file_id,
                     captured_at=latest_obs.captured_at,
+                    file_captured_at=getattr(latest_obs, "file_captured_at", latest_obs.captured_at),
                     details=f,
                 )
             )
@@ -170,7 +182,7 @@ class StateEvaluator:
         latest_cov_file = ""
         cov_cand = [
             c for c in self.cov_by_sys.get(sys_id, [])
-            if c.captured_at <= audit_at
+            if c.captured_at <= audit_at and (getattr(c, "file_captured_at", None) or c.captured_at) <= audit_at
         ]
         if cov_cand:
             cov_cand.sort(key=lambda x: x.captured_at, reverse=True)
@@ -189,30 +201,44 @@ class StateEvaluator:
         anon_stores = [s for s in store_states if s.state == "PRESENT_ANONYMIZED"]
         absent_stores = [s for s in store_states if s.state == "ABSENT"]
 
+        # Helper to determine if a store's evidence file was captured at or before audit_at
+        def _citable(s: StoreState) -> bool:
+            f_cap = s.file_captured_at or s.captured_at
+            return f_cap <= audit_at
+
+        citable_identified = [s for s in identified_stores if _citable(s)]
+        citable_redacted = [s for s in redacted_stores if _citable(s)]
+        citable_anon = [s for s in anon_stores if _citable(s)]
+        citable_absent = [s for s in absent_stores if _citable(s)]
+
         if identified_stores:
             overall = "PRESENT_IDENTIFIED"
-            # Sort by captured_at to cite the latest remaining copy
+            # Prioritize citable files captured at or before audit_at; if multiple, pick latest
+            citable_identified.sort(key=lambda s: s.captured_at, reverse=True)
             identified_stores.sort(key=lambda s: s.captured_at, reverse=True)
-            violating_store = identified_stores[0]
-            evidence_id = violating_store.file_id
+            violating_store = citable_identified[0] if citable_identified else identified_stores[0]
+            evidence_id = violating_store.file_id if _citable(violating_store) else ""
             rationale = f"Resource holds identified PII in {violating_store.store} store ({violating_store.file_id})"
         elif redacted_stores:
             overall = "PRESENT_REDACTED"
+            citable_redacted.sort(key=lambda s: s.captured_at, reverse=True)
             redacted_stores.sort(key=lambda s: s.captured_at, reverse=True)
-            redacted_store = redacted_stores[0]
-            evidence_id = redacted_store.file_id
+            redacted_store = citable_redacted[0] if citable_redacted else redacted_stores[0]
+            evidence_id = redacted_store.file_id if _citable(redacted_store) else ""
             rationale = f"Resource is redacted with stable user_id in {redacted_store.store} store ({redacted_store.file_id})"
         elif anon_stores:
             overall = "PRESENT_ANONYMIZED"
+            citable_anon.sort(key=lambda s: s.captured_at, reverse=True)
             anon_stores.sort(key=lambda s: s.captured_at, reverse=True)
-            anon_store = anon_stores[0]
-            evidence_id = anon_store.file_id
+            anon_store = citable_anon[0] if citable_anon else anon_stores[0]
+            evidence_id = anon_store.file_id if _citable(anon_store) else ""
             rationale = f"Resource is anonymized in {anon_store.store} store ({anon_store.file_id})"
         elif absent_stores:
             overall = "ABSENT"
+            citable_absent.sort(key=lambda s: s.captured_at, reverse=True)
             absent_stores.sort(key=lambda s: s.captured_at, reverse=True)
-            abs_store = absent_stores[0]
-            evidence_id = abs_store.file_id
+            abs_store = citable_absent[0] if citable_absent else absent_stores[0]
+            evidence_id = abs_store.file_id if _citable(abs_store) else ""
             rationale = f"Resource is proven ABSENT by explicit lookup in {abs_store.file_id}"
         elif latest_cov_file:
             overall = "ABSENT"
@@ -244,13 +270,19 @@ class StateEvaluator:
                         or s.details.get("deletion_block") in (False, 0, "0", "false", "False")
                         or s.details.get("eligible") in (True, 1, "1", "true", "True"))
                 ]
+                citable_active = [s for s in active_stores if _citable(s)]
+                citable_active.sort(key=lambda s: s.captured_at, reverse=True)
                 active_stores.sort(key=lambda s: s.captured_at, reverse=True)
-                evidence_id = active_stores[0].file_id if active_stores else (store_states[0].file_id if store_states else "")
+                chosen = citable_active[0] if citable_active else (active_stores[0] if active_stores else None)
+                evidence_id = chosen.file_id if (chosen and _citable(chosen)) else ""
                 rationale = f"Backup archive has active restore risk in {evidence_id}"
             else:
                 overall = "BLOCKED"
+                citable_stores = [s for s in store_states if _citable(s)]
+                citable_stores.sort(key=lambda s: s.captured_at, reverse=True)
                 store_states.sort(key=lambda s: s.captured_at, reverse=True)
-                evidence_id = store_states[0].file_id if store_states else ""
+                chosen = citable_stores[0] if citable_stores else (store_states[0] if store_states else None)
+                evidence_id = chosen.file_id if (chosen and _citable(chosen)) else ""
                 rationale = f"Backup archive restore is blocked in {evidence_id}"
         elif cat == "DATA_FLOW":
             flow_open = any(
@@ -264,13 +296,19 @@ class StateEvaluator:
                     s for s in store_states
                     if s.details.get("enabled") in (True, 1, "1", "true", "True")
                 ]
+                citable_active = [s for s in active_stores if _citable(s)]
+                citable_active.sort(key=lambda s: s.captured_at, reverse=True)
                 active_stores.sort(key=lambda s: s.captured_at, reverse=True)
-                evidence_id = active_stores[0].file_id if active_stores else (store_states[0].file_id if store_states else "")
+                chosen = citable_active[0] if citable_active else (active_stores[0] if active_stores else None)
+                evidence_id = chosen.file_id if (chosen and _citable(chosen)) else ""
                 rationale = f"Data flow sync is active (enabled=True) in {evidence_id}"
             else:
                 overall = "DISABLED"
+                citable_stores = [s for s in store_states if _citable(s)]
+                citable_stores.sort(key=lambda s: s.captured_at, reverse=True)
                 store_states.sort(key=lambda s: s.captured_at, reverse=True)
-                evidence_id = store_states[0].file_id if store_states else ""
+                chosen = citable_stores[0] if citable_stores else (store_states[0] if store_states else None)
+                evidence_id = chosen.file_id if (chosen and _citable(chosen)) else ""
                 rationale = f"Data flow sync is disabled in {evidence_id}"
         elif cat == "ACCOUNT_TOMBSTONE":
             # Tombstone is compliant only if direct identifiers are absent (PRESENT_REDACTED)
