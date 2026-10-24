@@ -105,6 +105,13 @@ def load_pdf_evidence(
             if retain_matches:
                 fields["retain_until"] = retain_matches[0].strip()
 
+            cat = None
+            if rid.startswith("support_"):
+                if "attachment" in full_text.lower() or "attachment" in file_path.name.lower():
+                    cat = "SUPPORT_ATTACHMENT"
+                else:
+                    cat = "SUPPORT_MESSAGE"
+
             obs_id = f"{file_id}:doc:{rid}:{idx}"
             observations.append(
                 Observation(
@@ -114,7 +121,7 @@ def load_pdf_evidence(
                     system_id=system_id,
                     store="doc",
                     resource_id=rid,
-                    category=None,
+                    category=cat,
                     fields=fields,
                     present=True,
                 )

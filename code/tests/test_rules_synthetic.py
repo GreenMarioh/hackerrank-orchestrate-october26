@@ -50,10 +50,10 @@ def test_synthetic_email_delivery_log(engine: RuleEngine):
     assert res_pii.status == "MET"
     assert res_pii.action == "REDACT"
 
-    # Log with redacted email -> RETAIN
+    # Log with redacted email -> NOT_MET, no action required
     res_redacted = engine.evaluate_rule("EMAIL_DELIVERY_LOG", fields={"email": None, "msg_id": "m-1"})
     assert res_redacted.status == "NOT_MET"
-    assert res_redacted.action == "RETAIN"
+    assert res_redacted.action is None
 
 
 def test_synthetic_support_attachment(engine: RuleEngine):
@@ -62,10 +62,10 @@ def test_synthetic_support_attachment(engine: RuleEngine):
     assert res_solo.status == "MET"
     assert res_solo.action == "DELETE"
 
-    # Shared attachment with another user -> REDACT
+    # Shared attachment with another user -> NOT_MET, no rule in policy
     res_shared = engine.evaluate_rule("SUPPORT_ATTACHMENT", fields={"uploaded_by": "user_10", "shared": True})
     assert res_shared.status == "NOT_MET"
-    assert res_shared.action == "REDACT"
+    assert res_shared.action is None
 
 
 def test_synthetic_legal_hold_record(engine: RuleEngine):
@@ -78,14 +78,14 @@ def test_synthetic_legal_hold_record(engine: RuleEngine):
     assert res_active.status == "MET"
     assert res_active.action == "RETAIN"
 
-    # Released legal hold -> DELETE
+    # Released legal hold -> NOT_MET, no active hold rule applies
     res_released = engine.evaluate_rule(
         "LEGAL_HOLD_RECORD",
         fields={"active": False, "released": True},
         audit_at=AUDIT_CUTOFF,
     )
     assert res_released.status == "NOT_MET"
-    assert res_released.action == "DELETE"
+    assert res_released.action is None
 
 
 def test_synthetic_secondary_identifier(engine: RuleEngine):
@@ -101,7 +101,7 @@ def test_synthetic_product_telemetry(engine: RuleEngine):
     assert res_attr.status == "MET"
     assert res_attr.action == "ANONYMIZE"
 
-    # Unlinked telemetry without user identifiers -> RETAIN
+    # Unlinked telemetry without user identifiers -> NOT_MET, no policy rule defined
     res_unlinked = engine.evaluate_rule("PRODUCT_TELEMETRY", fields={"user_id": None, "click_count": 42})
     assert res_unlinked.status == "NOT_MET"
-    assert res_unlinked.action == "RETAIN"
+    assert res_unlinked.action is None

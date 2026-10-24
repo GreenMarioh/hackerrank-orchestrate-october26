@@ -48,6 +48,22 @@ def _parse_key_value(line: str) -> dict[str, str]:
         if v.startswith('"') and v.endswith('"'):
             v = v[1:-1].replace('\\"', '"').replace('\\\\', '\\')
         result[k] = v
+
+    # If line is pipe-delimited, extract positional tokens: ts | level | service | trace_id | event | kv...
+    if "|" in line:
+        parts = [p.strip() for p in line.split("|")]
+        if len(parts) >= 4:
+            if re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", parts[0]) and "timestamp" not in result:
+                result["timestamp"] = parts[0]
+            if parts[1] in ("DEBUG", "INFO", "WARN", "WARNING", "ERROR", "CRITICAL") and "level" not in result:
+                result["level"] = parts[1]
+            if "service" not in result and not "=" in parts[2]:
+                result["service"] = parts[2]
+            if parts[3].startswith("tr-") and "trace_id" not in result:
+                result["trace_id"] = parts[3]
+            if len(parts) >= 5 and "event" not in result and not "=" in parts[4]:
+                result["event"] = parts[4]
+
     return result
 
 
@@ -152,6 +168,12 @@ def load_log_evidence(
         unparsed.append(UnparsedEvidenceRecord(file_id, str(file_path), "Log file read error", str(exc)))
         return observations, unparsed
 
+    # First pass: parse lines and index trace_id -> resource_id / identifiers
+    parsed_lines = []
+    trace_to_rid: dict[str, str] = {}
+    trace_to_uid: dict[str, str] = {}
+    trace_to_email: dict[str, str] = {}
+
     for idx, raw_line in enumerate(lines):
         line = raw_line.strip()
         if not line:
@@ -164,6 +186,34 @@ def load_log_evidence(
             parsed = _parse_cloud_runtime(line)
         else:
             parsed = _parse_key_value(line)
+
+        # Detect resource_id
+        rid = parsed.get("resource_id")
+        if not rid:
+            m_res = re.search(
+                r"\b(account_\w+|search_\w+|support_\w+|analytics_\w+|export_\w+|data_flow_\w+|backup_\w+|audit_record_\w+|tombstone_\w+|object_\w+|marketing_\w+|cache_\w+|email_delivery_\w+|legal_hold_\w+)\b",
+                line,
+            )
+            if m_res:
+                rid = m_res.group(1)
+
+        tr = parsed.get("trace_id")
+        if tr:
+            if rid:
+                trace_to_rid[tr] = rid
+            uid = parsed.get("user_id") or parsed.get("customer_reference") or parsed.get("subject_reference") or parsed.get("subject_ref") or parsed.get("correlation_key")
+            if uid:
+                trace_to_uid[tr] = str(uid).strip()
+            email = parsed.get("email") or parsed.get("lookup_key")
+            if email and "@" in str(email):
+                trace_to_email[tr] = str(email).strip().lower()
+
+        parsed_lines.append((idx, line, parsed, rid))
+
+    for idx, line, parsed, rid in parsed_lines:
+        tr = parsed.get("trace_id")
+        if not rid and tr and tr in trace_to_rid:
+            rid = trace_to_rid[tr]
 
         # Extract timestamp
         ts = None
@@ -180,20 +230,24 @@ def load_log_evidence(
         if not ts:
             ts = manifest_captured_at
 
-        # Extract resource_id or identifiers
-        rid = parsed.get("resource_id")
-        if not rid:
-            # Check regex for known resource prefix patterns in line
-            m_res = re.search(
-                r"\b(account_\w+|search_\w+|support_\w+|analytics_\w+|export_\w+|data_flow_\w+|backup_\w+|audit_record_\w+|tombstone_\w+|object_\w+|marketing_\w+|cache_\w+|email_delivery_\w+|legal_hold_\w+)\b",
-                line,
-            )
-            if m_res:
-                rid = m_res.group(1)
-
         # Extract user identifiers
-        uid = parsed.get("user_id") or parsed.get("customer_reference") or parsed.get("subject_reference") or parsed.get("subject_id")
-        email = parsed.get("email") or parsed.get("owner_email") or parsed.get("customer_email") or parsed.get("subject_email")
+        uid = (
+            parsed.get("user_id")
+            or parsed.get("customer_reference")
+            or parsed.get("subject_reference")
+            or parsed.get("subject_ref")
+            or parsed.get("subject_id")
+            or parsed.get("correlation_key")
+            or (trace_to_uid.get(tr) if tr else None)
+        )
+        email = (
+            parsed.get("email")
+            or parsed.get("owner_email")
+            or parsed.get("customer_email")
+            or parsed.get("subject_email")
+            or parsed.get("lookup_key")
+            or (trace_to_email.get(tr) if tr else None)
+        )
         phone = parsed.get("phone") or parsed.get("owner_phone")
 
         if not rid and not uid and not email:
@@ -203,15 +257,32 @@ def load_log_evidence(
         if not rid:
             rid = f"log_entry_{file_id}_{idx}"
 
-        system_id = _infer_system(parsed.get("service") or parsed.get("app_name") or parsed.get("function"), rid)
+        system_id = parsed.get("system") or _infer_system(parsed.get("service") or parsed.get("app_name") or parsed.get("function"), rid)
 
         fields: dict[str, Any] = dict(parsed)
         if uid:
-            fields["user_id"] = str(uid).strip()
+            uid_str = str(uid).strip()
+            if uid_str.startswith("user_"):
+                fields["user_id"] = uid_str
+                fields["subject_reference"] = uid_str
+            elif "@" in uid_str:
+                fields["email"] = uid_str.lower()
+            else:
+                fields["user_id"] = uid_str
         if email:
-            fields["email"] = str(email).strip().lower()
+            email_str = str(email).strip().lower()
+            if "@" in email_str:
+                fields["email"] = email_str
+            elif email_str.startswith("user_"):
+                fields["user_id"] = email_str
+                fields["subject_reference"] = email_str
         if phone:
             fields["phone"] = str(phone).strip()
+
+        # Handle record_lookup event result and record_type
+        category = parsed.get("record_type")
+        result_val = str(parsed.get("result", "")).strip().upper()
+        present = result_val != "NOT_FOUND"
 
         obs_id = f"{file_id}:line_{idx}:{rid}"
         observations.append(
@@ -222,9 +293,9 @@ def load_log_evidence(
                 system_id=system_id,
                 store="log",
                 resource_id=rid,
-                category=None,
+                category=category,
                 fields=fields,
-                present=True,
+                present=present,
             )
         )
 

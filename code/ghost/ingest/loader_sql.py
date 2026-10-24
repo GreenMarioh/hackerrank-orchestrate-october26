@@ -58,7 +58,7 @@ def _detect_store_type(table_name: str, header_text: str) -> str:
 def _infer_system_and_category(table_name: str, resource_id: str) -> tuple[str, str | None]:
     t = table_name.lower()
     r = resource_id.lower()
-    if r.startswith("account_") or "customer_profile" in t or "customer_data" in t:
+    if r.startswith("account_"):
         return "account_service", "USER_PROFILE"
     if r.startswith("search_") or "search" in t:
         return "search_service", "SEARCH_INDEX_ENTRY"
@@ -86,6 +86,8 @@ def _infer_system_and_category(table_name: str, resource_id: str) -> tuple[str, 
         return "cache_service", "CACHE_ENTRY"
     if r.startswith("email_delivery_") or "email_delivery" in t:
         return "email_delivery_service", "EMAIL_DELIVERY_LOG"
+    if "customer_profile" in t or "customer_data" in t:
+        return "account_service", "USER_PROFILE"
     return "unknown_service", None
 
 

@@ -57,7 +57,7 @@ CASES_45 = [
 
     # 6. SUPPORT_ATTACHMENT
     ("SUPPORT_ATTACHMENT", "present-compliant", {"uploaded_by": "u1", "shared": False}, "MET", "DELETE"),
-    ("SUPPORT_ATTACHMENT", "present-violating", {"shared": True}, "NOT_MET", "REDACT"),
+    ("SUPPORT_ATTACHMENT", "present-violating", {"shared": True}, "NOT_MET", None),
     ("SUPPORT_ATTACHMENT", "absent/UNKNOWN", {}, "UNKNOWN", None),
 
     # 7. ANALYTICS_PROFILE
@@ -67,7 +67,7 @@ CASES_45 = [
 
     # 8. PRODUCT_TELEMETRY
     ("PRODUCT_TELEMETRY", "present-violating", {"user_id": "u1", "events": 10}, "MET", "ANONYMIZE"),
-    ("PRODUCT_TELEMETRY", "present-compliant", {"user_id": None, "events": 10}, "NOT_MET", "RETAIN"),
+    ("PRODUCT_TELEMETRY", "present-compliant", {"user_id": None, "events": 10}, "NOT_MET", None),
     ("PRODUCT_TELEMETRY", "absent/UNKNOWN", {}, "UNKNOWN", None),
 
     # 9. USER_EXPORT
@@ -82,7 +82,7 @@ CASES_45 = [
 
     # 11. EMAIL_DELIVERY_LOG
     ("EMAIL_DELIVERY_LOG", "present-compliant", {"email": "cust@b.com"}, "MET", "REDACT"),
-    ("EMAIL_DELIVERY_LOG", "present-violating", {"status": "sent"}, "NOT_MET", "RETAIN"),
+    ("EMAIL_DELIVERY_LOG", "present-violating", {"status": "sent"}, "NOT_MET", None),
     ("EMAIL_DELIVERY_LOG", "absent/UNKNOWN", {}, "UNKNOWN", None),
 
     # 12. SECURITY_AUDIT_LOG
@@ -92,7 +92,7 @@ CASES_45 = [
 
     # 13. LEGAL_HOLD_RECORD
     ("LEGAL_HOLD_RECORD", "present-compliant", {"retained_until": "2028-01-01T00:00:00Z", "retention_reason": "tax audit"}, "MET", "RETAIN"),
-    ("LEGAL_HOLD_RECORD", "present-violating", {"active": False, "released": True}, "NOT_MET", "DELETE"),
+    ("LEGAL_HOLD_RECORD", "present-violating", {"active": False, "released": True}, "NOT_MET", None),
     ("LEGAL_HOLD_RECORD", "absent/UNKNOWN", {}, "UNKNOWN", None),
 
     # 14. BACKUP_ARCHIVE

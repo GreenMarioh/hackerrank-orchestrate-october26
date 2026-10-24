@@ -216,7 +216,8 @@ class RuleEngine:
         if rid == "rule_06":
             is_shared = fields.get("shared")
             if is_shared is True:
-                return ConditionResult(status="NOT_MET", action="REDACT", rule_id=rid, reason="Attachment is shared with other subjects")
+                # No rule in policy defines action for shared attachment; return UNKNOWN
+                return ConditionResult(status="NOT_MET", action=None, rule_id=rid, reason="Attachment is shared; no retention/redaction rule defined in policy")
             if "uploaded_by" in fields or "user_id" in fields or "email" in fields or "raw_identifier" in fields:
                 return ConditionResult(
                     status="MET",
@@ -263,7 +264,8 @@ class RuleEngine:
                     reason="Telemetry record is attributable to user",
                 )
             if fields:
-                return ConditionResult(status="NOT_MET", action="RETAIN", rule_id=rid, reason="Telemetry record unlinked")
+                # Policy only specifies ANONYMIZE when attributable; no rule for unlinked telemetry
+                return ConditionResult(status="NOT_MET", action=None, rule_id=rid, reason="Telemetry record is unlinked; no policy rule defined")
             return ConditionResult(status="UNKNOWN", action=None, rule_id=rid, reason="Fields unavailable for PRODUCT_TELEMETRY")
 
         # Rule 11: EMAIL_DELIVERY_LOG -> Log contains a user email address
@@ -276,7 +278,8 @@ class RuleEngine:
                     rule_id=rid,
                     reason="Log contains user email address that must be redacted",
                 )
-            return ConditionResult(status="NOT_MET", action="RETAIN", rule_id=rid, reason="Log contains no user email address")
+            # Log without email: condition not met, no deletion/redaction action required
+            return ConditionResult(status="NOT_MET", action=None, rule_id=rid, reason="Log contains no user email address; no action required")
 
         # Rule 12: SECURITY_AUDIT_LOG -> Record is within the supplied retention period
         if rid == "rule_12":
@@ -318,7 +321,7 @@ class RuleEngine:
             reason = fields.get("retention_reason")
             active = fields.get("active")
             if active is False or fields.get("released") is True:
-                return ConditionResult(status="NOT_MET", action="DELETE", rule_id=rid, reason="Legal hold was released")
+                return ConditionResult(status="NOT_MET", action=None, rule_id=rid, reason="Legal hold was released; no active hold rule applies")
             if retention_ts or reason or fields.get("order_reference") or active is True:
                 return ConditionResult(
                     status="MET",
