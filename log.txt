@@ -142,3 +142,37 @@ branch=master
 repo_root=c:\Users\[REDACTED]\Desktop\orchestrate-october26\hackerrank-orchestrate-october26-main
 worktree=main
 parent_agent=none
+
+## 2026-10-24T21:18:15+05:30 Phase 4 Deletion Rules Engine and Pre-Phase 4 Analysis
+
+User Prompt (verbatim, secrets redacted):
+Phase 2 fixes and Phase 3 accepted. Before Phase 4, please:
+1. Report the true evidence coverage now that the image fallback is removed: how many of the 94 files yield observations, how many are coverage-only, how many are unparsed (PNGs skipped without a key must be UnparsedEvidenceRecord with a reason). Update test_ingest accordingly.
+2. Create code/ghost/llm.py as the single wrapper for model calls (provider, model, input/output tokens from the API response metadata, purpose, cache hit/miss) and route loader_image.py through it. I will set LLM_API_KEY in .env myself; do not ask for or print it. After I do, run the image extraction once and report facts per PNG.
+3. Give three counts for the 111 sample resources: alias found in the cited evidence content / linked only by the time window / neither. Make sure no code reads activity columns that don't exist (subject_id, subject_email).
+4. Identity resolution: add a test for the case where an email change A->B happens AFTER audit_at and the request uses A. The request email must still resolve to the user; the audit_at cutoff must be applied to evidence and state, not to deciding who the person is.
+5. Phase 4 rules: condition predicates are plain code on real evidence fields, returning UNKNOWN when the field is unavailable (never guessing); no LLM at run time; list every resource that cannot be categorised with its source file.
+Note for Phase 6: test the hypothesis that VERIFY_RECORD_ABSENT cites the latest snapshot covering that system at or before audit_at, against the sample answers.
+Commit per phase and proceed with Phase 4 only.
+
+Agent Response Summary:
+Reported the exact evidence coverage partition across all 94 files: 82 files yield 3,856 observations, 1 is coverage-only (evidence_90), and 11 PNGs are explicit UnparsedEvidenceRecord instances when skipped without an API key. Created code/ghost/llm.py to centrally track providers, models, input/output tokens from API response metadata, purpose, and cache hit/miss without ever logging secrets, routing loader_image.py through it. Computed linking signal counts for all 111 sample resources (56 alias in cited content, 37 time window only, 18 neither) and eliminated all references to nonexistent activity columns (subject_id, subject_email). Updated identity resolution so the person's identity is determined globally across audit history while audit_at cutoff applies to evidence and resource state, verified by unit test. Built Phase 4 in code/ghost/rules.py with plain-code condition predicates returning UNKNOWN on missing fields and zero LLM calls at run time, confirming 0 uncategorized resources, with 38/38 tests passing across the test suite.
+
+Actions:
+* Updated code/tests/test_ingest.py to verify the exact 82/1/11 evidence coverage partition
+* Implemented code/ghost/llm.py with token tracking and caching
+* Routed code/ghost/ingest/loader_image.py through ModelClient
+* Removed nonexistent columns subject_id and subject_email from codebase
+* Computed sample resource linking counts (56 alias, 37 time window, 18 neither)
+* Updated code/ghost/identity.py and added test_email_change_after_audit_at_still_resolves_user in code/tests/test_identity.py
+* Implemented RuleEngine in code/ghost/rules.py with deterministic condition predicates
+* Created code/tests/test_rules.py with 7 unit tests (38/38 test suite passing)
+* Committed Phase 4 changes to git (e48ce95)
+
+Context:
+tool=Antigravity
+model=gemini-3.8-flash-n
+branch=master
+repo_root=c:\Users\[REDACTED]\Desktop\orchestrate-october26\hackerrank-orchestrate-october26-main
+worktree=main
+parent_agent=none
