@@ -39,7 +39,7 @@ Context:
 tool=Antigravity
 model=claude-sonnet-4-5-20251101
 branch=unknown
-repo_root=c:\Users\mohni\Desktop\orchestrate-october26\hackerrank-orchestrate-october26-main
+repo_root=c:\Users\[REDACTED]\Desktop\orchestrate-october26\hackerrank-orchestrate-october26-main
 worktree=main
 parent_agent=none
 
@@ -69,7 +69,7 @@ Context:
 tool=Antigravity
 model=gemini-3.8-flash-n
 branch=main
-repo_root=c:\Users\mohni\Desktop\orchestrate-october26\hackerrank-orchestrate-october26-main
+repo_root=c:\Users\[REDACTED]\Desktop\orchestrate-october26\hackerrank-orchestrate-october26-main
 worktree=main
 parent_agent=none
 
