@@ -108,3 +108,36 @@ def test_models_immutability():
         assert False, "SnapshotCoverage must be frozen"
     except Exception:
         pass
+
+
+def test_service_name_not_extracted_as_resource_id_in_logs(tmp_path: Path):
+    """Regression test: service names in logs must not be extracted as resource_id."""
+    from ghost.ingest.loader_logs import load_log_evidence
+    from datetime import datetime, timezone
+
+    log_file = tmp_path / "test_service.log"
+    log_file.write_text(
+        "2026-09-15T11:56:49Z level=DEBUG service=account_service instance=account-2 trace_id=tr-1234 event=profile_lookup_started lookup_key=user@test.com\n"
+        "2026-09-15T11:56:57Z level=INFO service=account_service instance=account-2 trace_id=tr-1234 resource_id=account_9797 event=profile_lookup_completed rows=0 http_status=404\n",
+        encoding="utf-8",
+    )
+    obs, unp = load_log_evidence(log_file, "ev_test", datetime.now(timezone.utc))
+    for o in obs:
+        assert o.resource_id != "account_service", f"Service name extracted as resource_id: {o.resource_id}"
+        assert o.resource_id == "account_9797"
+
+
+def test_pdf_user_isolation_avoids_cross_linking_all_users(tmp_path: Path):
+    """Regression test: multi-user register PDFs must isolate per-row user_id."""
+    from ghost.ingest.loader_pdf import load_pdf_evidence
+    from datetime import datetime, timezone
+
+    # Verify against legal_retention_register_20260529.pdf (evidence_27)
+    ev27_path = DATASET_DIR / "evidence" / "documents" / "legal_retention_register_20260529.pdf"
+    if ev27_path.exists():
+        obs, _ = load_pdf_evidence(ev27_path, "evidence_27", datetime.now(timezone.utc))
+        user_ids_per_obs = [o.fields.get("user_id") for o in obs]
+        # Must have distinct user_ids, not all user_ids attached to every obs
+        assert "all_user_ids" not in obs[0].fields, "all_user_ids should not be in individual observation fields"
+        assert len(set(user_ids_per_obs)) > 1, "Observations should be bound to specific individual user_ids"
+

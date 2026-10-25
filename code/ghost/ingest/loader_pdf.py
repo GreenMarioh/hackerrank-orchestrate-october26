@@ -134,16 +134,11 @@ def load_pdf_evidence(
             system_id = _infer_system(rid, full_text[:200])
             fields = {
                 "source_text": full_text[:500],
-                "all_user_ids": user_ids,
-                "all_emails": [e.lower() for e in emails],
-                "all_phones": phones,
             }
             if uid:
                 fields["user_id"] = uid
-            if emails:
+            elif emails:
                 fields["email"] = emails[0].lower()
-            if phones:
-                fields["phone"] = phones[0]
             if retain_matches:
                 fields["retain_until"] = retain_matches[0].strip()
 

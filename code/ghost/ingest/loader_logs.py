@@ -15,6 +15,24 @@ from typing import Any
 
 from ghost.models import Observation, UnparsedEvidenceRecord
 
+KNOWN_SERVICES: set[str] = {
+    "account_service", "search_service", "analytics_platform", "support_platform",
+    "security_service", "backup_service", "export_service", "integration_service",
+    "legal_service", "identity_service", "email_delivery_service", "marketing_platform",
+    "cache_service", "object_storage", "document_service", "log_service",
+}
+
+EVENT_NAMES: set[str] = {
+    "analytics_identity_scan", "analytics_profile_scan_started", "attachment_pii_scan",
+    "attachment_scan_started", "audit_record_query_started", "audit_record_read_completed",
+    "cache_lookup", "cache_refresh", "connection_acquired", "connector_config_read_started",
+    "connector_heartbeat", "consumer_lag", "contact_lookup_completed", "delivery_abandoned",
+    "dependency_recovered", "dependency_retry", "export_completed", "export_download_check_completed",
+    "export_download_check_started", "export_started", "index_query_completed", "index_query_started",
+    "lease_extended", "message_pii_scan", "message_scan_started", "profile_lookup_completed",
+    "profile_lookup_started", "restore_candidate_evaluated", "restore_policy_check_started",
+}
+
 
 def _parse_iso(ts_str: str | None) -> datetime | None:
     if not ts_str:
@@ -220,12 +238,14 @@ def load_log_evidence(
         # Detect resource_id
         rid = parsed.get("resource_id")
         if not rid:
-            m_res = re.search(
-                r"\b(account_\w+|search_\w+|support_\w+|analytics_\w+|export_\w+|data_flow_\w+|backup_\w+|audit_record_\w+|tombstone_\w+|object_\w+|marketing_\w+|cache_\w+|email_delivery_\w+|legal_hold_\w+)\b",
+            for m in re.finditer(
+                r"\b(account|search|support|analytics|export|data_flow|backup|audit_record|tombstone|object|marketing|cache|email_delivery|legal_hold)_(\d+)\b",
                 line,
-            )
-            if m_res:
-                rid = m_res.group(1)
+            ):
+                candidate = m.group(0)
+                if candidate not in KNOWN_SERVICES and candidate not in EVENT_NAMES:
+                    rid = candidate
+                    break
 
         tr = parsed.get("trace_id")
         if tr:

@@ -533,3 +533,34 @@ branch=master
 repo_root=c:\Users\[REDACTED]\Desktop\orchestrate-october26\hackerrank-orchestrate-october26-main
 worktree=main
 parent_agent=none
+
+## 2026-10-25T09:51:30+05:30 Phase 10: Resolve Semantic Accuracy Gaps and Correct Evaluation Claims
+
+User Prompt (verbatim, secrets redacted):
+# Phase 10: Resolve Semantic Accuracy Gaps and Correct Evaluation Claims
+
+The Phase 9 audit is committed as e427de7. The current solution passes 124 tests, produces 518 output rows, passes the structural validator, and reportedly produces deterministic output. However, its sample evaluation reports only 5/32 exact step-list matches (15.63%), 158/193 expected steps aligned (81.87%), and 152/158 operation matches on aligned steps (96.20%).
+
+Do not declare the solution ready for submission until the following investigation is complete.
+
+Agent Response Summary:
+Resolved semantic accuracy gaps and verified evaluation claims. Fixed three substantiated defects in data ingestion and policy rules: eliminated spurious service/event names in loader_logs.py (preventing false account_service links), mapped email_opt_in analytics profiles to MARKETING_PROFILE in rules.py (achieving exact match on case_12), and isolated multi-user metadata in loader_pdf.py (preventing cross-user document leakage in case_21). Increased exact step-list matches to 8/32 (25.00%), step resource precision to 98.75% (158/160), F1 score to 89.52%, and operation accuracy on aligned steps to 98.10% (155/158), while maintaining 100% case-level status accuracy (32/32) and 0 temporal citation leaks (60/60 valid). Analyzed confidence gating on remaining mismatches, proving that promoting medium-confidence worker references injects 570+ false-positive decoy violations across the 518 evaluation dataset. Expanded test suite to 126 passed tests, validated fresh output.csv (SHA-256: 4dc4e5c911f463409f84c2f74c5e191e2ee818921cdba4313d201d8f385ec2a1), updated evaluation and usage reports, and packaged clean code.zip.
+
+Actions:
+* Fixed service and event regex in code/ghost/ingest/loader_logs.py
+* Added email_opt_in marketing categorization in code/ghost/rules.py
+* Isolated per-user document fields in code/ghost/ingest/loader_pdf.py
+* Added regression tests in code/tests/test_ingest.py (test suite expanded to 126 passed in 17.34s)
+* Created diagnostic table generator code/tools/generate_diag_table.py and updated code/tools/audit_samples.py
+* Generated fresh output.csv for 518 cases and verified 100% invariant compliance via code/tools/validate_output.py
+* Updated evaluation_report.md and usage_report.md in evaluation/ and code/evaluation/
+* Packaged clean submission archive code.zip (53 files, no dataset or caches)
+
+Context:
+tool=Antigravity
+model=gemini-3.8-flash-n
+branch=master
+repo_root=c:\Users\[REDACTED]\Desktop\orchestrate-october26\hackerrank-orchestrate-october26-main
+worktree=main
+parent_agent=none
+

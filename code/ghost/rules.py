@@ -103,6 +103,8 @@ class RuleEngine:
             return "SUPPORT_MESSAGE", "Resource prefix support_/ticket_ denotes customer support message"
 
         if rid.startswith("analytics_"):
+            if f.get("email_opt_in") is not None:
+                return "MARKETING_PROFILE", "Analytics resource contains email_opt_in consent field denoting marketing profile"
             return "ANALYTICS_PROFILE", "Resource prefix analytics_ denotes customer analytics record"
 
         if rid.startswith("export_"):
