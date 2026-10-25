@@ -2,7 +2,8 @@
 
 An AI-powered deletion-audit engine that verifies whether personal data was actually deleted across multi-store architectures, prevents recreation via synchronization and backup pipelines, and produces fully ordered remediation and verification plans.
 
-**Challenge Link:** https://wwww.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists
+**Challenge & Submission Link:** https://www.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists  
+*(Specification alias: https://wwww.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists)*
 
 ---
 

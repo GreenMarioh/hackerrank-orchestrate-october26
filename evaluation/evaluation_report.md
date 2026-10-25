@@ -1,7 +1,7 @@
 # Evaluation Report: Ghost Data Still Exists (Phase 10 Semantic Accuracy & Invariant Audit)
 
 **Challenge:** HackerRank Orchestrate (October 2026) — *Ghost Data Still Exists*  
-**Official Contest URL:** `https://wwww.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists`  
+**Official Contest URL:** `https://www.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists` (alias: `https://wwww.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists`)  
 **Evaluation Scope:** 32 Sample Deletion Requests (`sample_deletion_requests.csv`) vs Ground Truth (`sample_output.csv`), and Full Dataset Invariant Audit across 518 Evaluation Cases (`deletion_requests.csv`).  
 **Audit Engine:** Deterministic Multi-Store Deletion Audit Engine (`code/main.py`).  
 **Date:** October 25, 2026  
