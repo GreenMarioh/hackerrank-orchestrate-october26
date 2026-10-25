@@ -1,123 +1,100 @@
-# Evaluation Report: Ghost Data Still Exists (Phase 10 Semantic Accuracy & Invariant Audit)
+# Evaluation Report: Ghost Data Still Exists (Phase 13 Comprehensive Audit)
 
 **Challenge:** HackerRank Orchestrate (October 2026) — *Ghost Data Still Exists*  
-**Official Contest URL:** `https://www.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists` (alias: `https://wwww.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists`)  
+**Official Contest URL:** `https://www.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists`  
 **Evaluation Scope:** 32 Sample Deletion Requests (`sample_deletion_requests.csv`) vs Ground Truth (`sample_output.csv`), and Full Dataset Invariant Audit across 518 Evaluation Cases (`deletion_requests.csv`).  
 **Audit Engine:** Deterministic Multi-Store Deletion Audit Engine (`code/main.py`).  
 **Date:** October 25, 2026  
 
 ---
 
-## 1. Executive Summary & Core Metrics
+## 1. Executive Summary & Comprehensive Metrics Matrix
 
 The deletion-audit system implements an end-to-end evidence-based pipeline that verifies whether personal data was truly deleted across multi-store architectures (primary databases, regional replicas, reporting replicas, failover replicas, logs, backups, and data synchronization flows).
 
-Across all 32 public sample cases with ground-truth labels:
+Below is the verified metrics matrix evaluating the committed production engine across structural, semantic, linkage, operation, and citation properties:
 
-| Metric Name | Formulated Ratio | Percentage | Description / Denominator Definition |
-|---|---|---|---|
-| **Case-Level Status Accuracy** | **32 / 32** | **100.00%** | Agreement on `deletion_status` across all 32 sample cases (10 COMPLETE, 22 INCOMPLETE, 0 NOT_APPLICABLE). |
-| **Exact Step-List Match Rate** | **8 / 32** | **25.00%** | Fraction of cases where generated steplist is 100% byte-for-byte and key-for-key identical to expected steps. |
-| **Ordering Compliance** | **32 / 32** | **100.00%** | Strict monotonic phase progression (`FINDING` -> `REMEDIATION` -> `VERIFICATION`) and 1..N step numbering. |
-| **Step Resource Alignment Recall** | **158 / 193** | **81.87%** | Fraction of 193 expected steps whose `(phase, system_id, resource_id)` tuple was recovered. |
-| **Step Resource Alignment Precision** | **158 / 160** | **98.75%** | Fraction of 160 generated steps whose `(phase, system_id, resource_id)` matched an expected step. |
-| **Step Resource Alignment F1 Score** | — | **89.52%** | Harmonic mean of step-level precision (98.75%) and recall (81.87%). |
-| **Operation Accuracy on Aligned** | **155 / 158** | **98.10%** | Fraction of aligned steps where predicted `operation` exactly matches ground truth. |
-| **State Accuracy on Aligned** | **156 / 158** | **98.73%** | Fraction of aligned steps where predicted `state` exactly matches ground truth. |
-| **Op & State Accuracy on Aligned** | **155 / 158** | **98.10%** | Fraction of aligned steps where both `operation` and `state` match ground truth. |
-| **Evidence ID Match on Aligned** | **158 / 158** | **100.00%** | Fraction of aligned steps where predicted `evidence_id` exactly matches ground truth. |
-| **Exact Step Dict Match Rate** | **112 / 193** | **58.03%** | Fraction of expected steps matching all fields (`phase`, `sys`, `res`, `op`, `state`, `evidence_id`) exactly. |
-| **Citation Existence Validity** | **60 / 60** | **100.00%** | Non-empty cited `evidence_id`s in findings and verifications that resolve to existing files/events. |
-| **Temporal Citation Validity** | **60 / 60** | **100.00%** | Non-empty cited evidence captured at or before case `audit_at` (0 temporal leaks). |
+| Metric Category | Metric Name | Ratio | Percentage | Operational Definition & Denominator |
+|---|---|---|---|---|
+| **Contract Invariants** | **Phase & Numbering Compliance** | **32 / 32** | **100.00%** | Monotonic phase progression (`FINDING` -> `REMEDIATION` -> `VERIFICATION`) and 1..N step numbering across 32 sample cases. |
+| **Contract Invariants** | **Full Dataset Invariant Compliance** | **518 / 518** | **100.00%** | 100% pass rate on structural validator across all 518 production cases. |
+| **Case Classification** | **Case-Level Status Accuracy** | **32 / 32** | **100.00%** | Agreement on `deletion_status` (`COMPLETE`, `INCOMPLETE`, `NOT_APPLICABLE`) across all 32 sample cases. |
+| **Steplist Equivalence** | **Exact Step-List Match Rate** | **8 / 32** | **25.00%** | Cases where generated steplist is 100% byte-for-byte and key-for-key identical to ground truth (cases 05, 11, 12, 13, 14, 15, 16, 19). |
+| **Step Alignment** | **Step Resource Alignment Recall** | **158 / 193** | **81.87%** | Fraction of 193 ground-truth steps whose `(phase, system_id, resource_id)` tuple was recovered. |
+| **Step Alignment** | **Step Resource Alignment Precision** | **158 / 160** | **98.75%** | Fraction of 160 generated steps whose `(phase, system_id, resource_id)` matched an expected step. |
+| **Step Alignment** | **Step Resource Alignment F1 Score** | — | **89.52%** | Harmonic mean of step precision (98.75%) and step recall (81.87%). |
+| **Semantic Accuracy** | **Operation Accuracy on Aligned** | **155 / 158** | **98.10%** | Fraction of aligned steps where predicted `operation` exactly matches ground truth. |
+| **Semantic Accuracy** | **State Accuracy on Aligned** | **156 / 158** | **98.73%** | Fraction of aligned steps where predicted `state` exactly matches ground truth. |
+| **Semantic Accuracy** | **Op & State Accuracy on Aligned** | **155 / 158** | **98.10%** | Fraction of aligned steps where both `operation` and `state` match ground truth. |
+| **Step Equivalence** | **Exact Step Dict Match Rate** | **112 / 193** | **58.03%** | Fraction of expected steps matching all fields (`phase`, `sys`, `res`, `op`, `state`, `evidence_id`) exactly. |
+| **Citation Integrity** | **Citation Existence Validity** | **60 / 60** | **100.00%** | Generated non-empty citations that resolve to actual participant-facing files on disk. |
+| **Citation Integrity** | **Direct Resource Linkage** | **53 / 60** | **88.33%** | Generated citations where the cited file directly contains participant identifiers matching the subject (remaining 7 cite service snapshots proving absence). |
+| **Citation Integrity** | **Claim & State Support** | **60 / 60** | **100.00%** | Generated citations where the source content directly corroborates the asserted system, resource, and state. |
+| **Citation Integrity** | **Temporal Citation Validity** | **60 / 60** | **100.00%** | Generated citations satisfying `file_captured_at <= case.audit_at` (zero temporal leaks). |
 
 ---
 
-## 2. Evaluation Methodology & Separate Metric Denominators
+## 2. Evaluation Methodology & Isolated Denominators
 
-The evaluation framework (`code/tools/audit_samples.py`) enforces strict isolation between development benchmarking and production inference:
+The evaluation framework (`code/tools/audit_samples.py` and `code/tools/verify_citations_independent.py`) enforces strict isolation between development benchmarking and production inference:
 1. **Zero Contamination:** Production inference (`code/main.py` and `code/ghost/*`) never imports, reads, or checks `sample_output.csv` or `sample_deletion_requests.csv`.
 2. **Explicit Denominators:**
    - **Case-level metrics:** Denominator = 32 sample cases.
    - **Step recall / dictionary matches:** Denominator = 193 total steps defined in `sample_output.csv`.
    - **Step precision:** Denominator = 160 total steps generated by the model across the 32 sample cases.
    - **Aligned step metrics (operation, state, evidence):** Denominator = 158 aligned steps where `(phase, system_id, resource_id)` matches.
-   - **Citation validity:** Denominator = 60 generated steps containing non-empty `evidence_id`.
+   - **Citation metrics:** Denominator = 60 generated sample citations (and 980 citations on the 518 full-dataset cases).
 
 ---
 
-## 3. Comprehensive Diagnostic Table for Sample Cases
+## 3. Deep Field-Level Triage of the 35 Missing Expected Sample Steps
 
-The table below catalogs every case among the 32 samples where generated output diverged from `sample_output.csv`:
+Every single one of the 35 unmatched steps across the 32 sample cases belongs to the `VERIFICATION` phase (**0 finding steps missing, 0 remediation steps missing**). They fall into three distinct structural categories:
 
-| Case ID | Exp St | Gen St | Exp Steps | Gen Steps | Missing Steps | Unexpected Steps | Root Cause Category |
-|---|---|---|---|---|---|---|---|
-| `case_01` | COMPLETE | COMPLETE | 1 | 0 | VERIFICATION account_001 (`VERIFY_RECORD_ABSENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED |
-| `case_02` | COMPLETE | COMPLETE | 1 | 0 | VERIFICATION account_002 (`VERIFY_RECORD_ABSENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED |
-| `case_03` | COMPLETE | COMPLETE | 3 | 2 | VERIFICATION analytics_9406 (`VERIFY_RECORD_ANONYMIZED`) | None | ANALYTICS_PROFILE_VERIFICATION_OMITTED |
-| `case_04` | COMPLETE | COMPLETE | 2 | 0 | VERIFICATION account_004 (`VERIFY_RECORD_ABSENT`); VERIFICATION analytics_901 (`VERIFY_RECORD_ANONYMIZED`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED + ANALYTICS_PROFILE_VERIFICATION_OMITTED |
-| `case_06` | INCOMPLETE | INCOMPLETE | 4 | 3 | VERIFICATION account_006 (`VERIFY_RECORD_ABSENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED |
-| `case_07` | INCOMPLETE | INCOMPLETE | 4 | 3 | VERIFICATION account_007 (`VERIFY_RECORD_ABSENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED |
-| `case_08` | INCOMPLETE | INCOMPLETE | 4 | 3 | VERIFICATION account_008 (`VERIFY_RECORD_ABSENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED |
-| `case_09` | INCOMPLETE | INCOMPLETE | 5 | 3 | VERIFICATION account_3960 (`VERIFY_RECORD_ABSENT`); VERIFICATION audit_record_4902 (`VERIFY_RECORD_PRESENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED + SECURITY_AUDIT_LOG_RETAINED_OMITTED |
-| `case_10` | INCOMPLETE | INCOMPLETE | 4 | 3 | VERIFICATION account_010 (`VERIFY_RECORD_ABSENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED |
-| `case_17` | INCOMPLETE | INCOMPLETE | 5 | 6 | None | VERIFICATION account_6523 (`VERIFY_RECORD_ABSENT`) | HISTORICAL_ACCOUNT_SUPERSEDED |
-| `case_18` | INCOMPLETE | INCOMPLETE | 14 | 12 | VERIFICATION account_5521 (`VERIFY_RECORD_ABSENT`); VERIFICATION audit_record_6645 (`VERIFY_RECORD_PRESENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED + SECURITY_AUDIT_LOG_RETAINED_OMITTED |
-| `case_20` | INCOMPLETE | INCOMPLETE | 8 | 6 | VERIFICATION account_5037 (`VERIFY_RECORD_ABSENT`); VERIFICATION audit_record_5569 (`VERIFY_RECORD_PRESENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED + SECURITY_AUDIT_LOG_RETAINED_OMITTED |
-| `case_21` | COMPLETE | COMPLETE | 3 | 2 | VERIFICATION account_6440 (`VERIFY_RECORD_ABSENT`); VERIFICATION analytics_5335 (`VERIFY_RECORD_ANONYMIZED`) | VERIFICATION doc_evidence_27_2 (`VERIFY_RECORD_REDACTED`) | CLEAN_ACCOUNT_VERIFICATION_OMITTED + ANALYTICS_PROFILE_VERIFICATION_OMITTED + MULTI_SUBJECT_PDF_REGISTER_LINKED |
-| `case_22` | INCOMPLETE | INCOMPLETE | 8 | 7 | VERIFICATION account_4990 (`VERIFY_RECORD_ABSENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED |
-| `case_23` | INCOMPLETE | INCOMPLETE | 8 | 6 | VERIFICATION account_410 (`VERIFY_RECORD_ABSENT`); VERIFICATION audit_record_4128 (`VERIFY_RECORD_PRESENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED + SECURITY_AUDIT_LOG_RETAINED_OMITTED |
-| `case_24` | INCOMPLETE | INCOMPLETE | 7 | 6 | VERIFICATION audit_record_7095 (`VERIFY_RECORD_PRESENT`) | None | SECURITY_AUDIT_LOG_RETAINED_OMITTED |
-| `case_25` | COMPLETE | COMPLETE | 3 | 1 | VERIFICATION account_3136 (`VERIFY_RECORD_ABSENT`); VERIFICATION analytics_1895 (`VERIFY_RECORD_ANONYMIZED`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED + ANALYTICS_PROFILE_VERIFICATION_OMITTED |
-| `case_26` | COMPLETE | COMPLETE | 6 | 4 | VERIFICATION account_5684 (`VERIFY_RECORD_ABSENT`); VERIFICATION analytics_4566 (`VERIFY_RECORD_ANONYMIZED`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED + ANALYTICS_PROFILE_VERIFICATION_OMITTED |
-| `case_27` | COMPLETE | COMPLETE | 6 | 4 | VERIFICATION account_3866 (`VERIFY_RECORD_ABSENT`); VERIFICATION analytics_4574 (`VERIFY_RECORD_ANONYMIZED`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED + ANALYTICS_PROFILE_VERIFICATION_OMITTED |
-| `case_28` | COMPLETE | COMPLETE | 6 | 4 | VERIFICATION account_5482 (`VERIFY_RECORD_ABSENT`); VERIFICATION analytics_6077 (`VERIFY_RECORD_ANONYMIZED`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED + ANALYTICS_PROFILE_VERIFICATION_OMITTED |
-| `case_29` | INCOMPLETE | INCOMPLETE | 14 | 12 | VERIFICATION account_7012 (`VERIFY_RECORD_ABSENT`); VERIFICATION audit_record_3954 (`VERIFY_RECORD_PRESENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED + SECURITY_AUDIT_LOG_RETAINED_OMITTED |
-| `case_30` | INCOMPLETE | INCOMPLETE | 14 | 12 | VERIFICATION account_4163 (`VERIFY_RECORD_ABSENT`); VERIFICATION audit_record_1707 (`VERIFY_RECORD_PRESENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED + SECURITY_AUDIT_LOG_RETAINED_OMITTED |
-| `case_31` | COMPLETE | COMPLETE | 3 | 2 | VERIFICATION account_4857 (`VERIFY_RECORD_ABSENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED |
-| `case_32` | INCOMPLETE | INCOMPLETE | 5 | 4 | VERIFICATION account_8858 (`VERIFY_RECORD_ABSENT`) | None | CLEAN_ACCOUNT_VERIFICATION_OMITTED |
+### Category A: Clean Primary Account Absence Verification (21 steps)
+- **Cases:** `case_01`, `case_02`, `case_04`, `case_06`, `case_07`, `case_08`, `case_09`, `case_10`, `case_18`, `case_20`, `case_21`, `case_22`, `case_23`, `case_25`, `case_26`, `case_27`, `case_28`, `case_29`, `case_30`, `case_31`, `case_32`.
+- **Underlying Evidence Reality:** None of these account IDs exist in any SQL primary or replica tables at `audit_at` (they were expunged before the snapshot was taken). They appear exclusively as raw unauthenticated tokens in `system_activity.csv` deletion worker messages (e.g. `activity_3342`: `"Deletion worker reported requested operation as completed. Target resource: account_001"`).
+- **Identity Reliability:** `system_activity.csv` contains zero user identity fields (no `user_id`, no `email`, no `name`). The only correlation is timestamp proximity to the case's `reported_at`.
+- **Verdict & Spec Justification:** `JUSTIFIED_BY_SPEC` (AGENTS.md §6.5 / §6.6: Activity logs are claims; unauthenticated activity tokens lack referential identity). Guessing accounts from activity logs without identity links produces severe cross-tenant collisions on the full dataset.
+
+### Category B: Retained Security Audit Log Verification (7 steps)
+- **Cases:** `case_09`, `case_18`, `case_20`, `case_23`, `case_24`, `case_29`, `case_30`.
+- **Underlying Evidence Reality:**
+  - In 5 out of 7 cases (`case_09`, `case_23`, `case_24`, `case_29`, `case_30`), the database snapshot containing these audit records (`evidence_02`) was captured on `2026-09-17 12:00:00Z`, which is **after the case's `audit_at`** (e.g. `case_24` audit cutoff is `2026-09-15 12:00:00Z`).
+  - In `case_18` and `case_20`, the audit record tokens (`audit_record_6645`, `audit_record_5569`) do not exist in any participant-visible file in `dataset/evidence/`.
+- **Verdict & Spec Justification:** `JUSTIFIED_BY_SPEC` (AGENTS.md §6.2 / §6.6: Using or citing evidence captured after `audit_at` is strictly prohibited).
+
+### Category C: Fully Stripped Analytics Platform Profiles (7 steps)
+- **Cases:** `case_03` (`analytics_9406`), `case_04` (`analytics_901`), `case_21` (`analytics_5335`), `case_25` (`analytics_1895`), `case_26` (`analytics_4566`), `case_27` (`analytics_4574`), `case_28` (`analytics_6077`).
+- **Underlying Evidence Reality:** Inspected the exact rows in `evidence_92` and `evidence_02`:
+  ```json
+  {"resource_id": "analytics_1895", "user_id": null, "email": null, "phone": null, "email_hash": null, "customer_reference": null}
+  ```
+  Every single direct and indirect identifier is literally `null` because the platform had already anonymized the record.
+- **Verdict & Spec Justification:** `JUSTIFIED_BY_SPEC` (AGENTS.md §6.1 / §6.6: The solution must connect evidence through its contents and identifiers; organizer truth cannot be used for predictions). Dissociated records cannot be attributed to a subject without synthetic shortcuts.
 
 ---
 
-## 4. Confidence-Gating Analysis & Controlled Alternatives
+## 4. Confidence-Gating Investigation & Cross-Tenant Collisions
 
-### 4.1 The High-Confidence Verification Gate
-In the production pipeline (`code/ghost/decision.py`), post-remediation verification checks are generated exclusively for candidate resources that possess `HIGH` confidence (grounded direct identifier matches in evidence records). Resources whose association is derived solely from background operational entries in `system_activity.csv` receive `MEDIUM` confidence.
+We formulated and executed an empirical experiment (`code/tools/experiment_verification_gating.py`) to determine whether relaxing the verification gate on `MEDIUM` confidence worker activity could safely recover the 21 missing account verifications:
 
-### 4.2 Controlled Alternative Investigation
-We tested an alternative configuration that promoted `MEDIUM` confidence resources (such as accounts mentioned in deletion worker activity) to emit post-remediation `VERIFY_RECORD_ABSENT` steps:
-1. **Sample Impact:** Recovered 20 missing account verification steps, increasing step recall on samples to 92.2%.
-2. **Full Dataset Catastrophe:** Across the 518 evaluation cases, `system_activity.csv` contains over 1,480 automated worker operations across hundreds of unrelated decoy users. Promoting `MEDIUM` confidence links caused **570+ decoy resources** to be attributed to evaluation subjects. Decoy accounts that still had active background queues erroneously flipped compliant `COMPLETE` cases into `INCOMPLETE` violation findings.
-3. **Engineering Decision:** To maintain mathematical integrity and prevent catastrophic false-positive violations across the 518 dataset, the high-confidence policy gate was preserved. Direct evidence backing is required to substantiate findings.
-
----
-
-## 5. Substantiated Defect Fixes & Improvements
-
-During Phase 10, three structural defects were isolated and fixed in the core pipeline:
-
-1. **Service and Event Name Exclusion in Log Parsers (`code/ghost/ingest/loader_logs.py`):**
-   - *Problem:* Service names (`account_service`, `search_service`, `account_service_replica`) and event types (`audit_record_query_started`) were falsely captured as resource IDs by a loose regular expression when `resource_id=` was absent.
-   - *Fix:* Enforced strict digit suffix requirement (`\b(account|search|...|legal_hold)_(\d+)\b`) and added explicit blacklists for known services and event names.
-   - *Impact:* Eliminated 552 spurious resource observations. Converted `case_12` and `case_19` into 100% exact step-list matches. Precision surged from 89.77% to 98.75%.
-
-2. **Marketing Profile Categorization (`code/ghost/rules.py`):**
-   - *Problem:* Analytics profiles containing `email_opt_in=true` (e.g. `analytics_9914` in `evidence_01`) were miscategorized under generic analytics rules.
-   - *Fix:* Directed `categorize_resource` to classify analytics profiles with `email_opt_in` as `MARKETING_PROFILE`, enforcing immediate deletion.
-   - *Impact:* Perfectly aligned `case_12` (exact match).
-
-3. **Multi-Subject PDF Register User Isolation (`code/ghost/ingest/loader_pdf.py`):**
-   - *Problem:* `evidence_27` (`legal_retention_register_20260529.pdf`) contains retention entries for six distinct users. The extractor previously attached `all_user_ids` to all six generated document observations, cross-linking all six users.
-   - *Fix:* Isolated each observation's metadata to its specific `user_id`.
-   - *Impact:* Eliminated 5 spurious legal document links in `case_21`.
+1. **Sample Score:** Recovers account verifications on samples, boosting sample recall to 92.23%.
+2. **Full Dataset Catastrophe (Empirical Evidence):**
+   - In `system_activity.csv`, worker operations for automated background jobs (e.g. `support_5030`, `marketing_001`, `audit_record_2498`) execute without user IDs.
+   - When window-linked medium-confidence resources were evaluated, **65 clean `COMPLETE` cases** in the full dataset acquired spurious verification steps.
+   - Specifically, `case_57`, `case_58`, `case_59`, and `case_60` **all claimed verification for the exact same resource (`support_5030`)**, and `case_64` and `case_69` **both claimed verification for `marketing_001`**.
+   - `case_26` acquired **3 different accounts** (`account_2064`, `account_6523`, `account_7566`) and **2 different analytics profiles** (`analytics_9406`, `analytics_5589`), creating false multi-tenant claims.
+3. **Engineering Verdict:** Promoting medium-confidence resources into verification steps violates referential integrity. The current `HIGH`-confidence gate is mathematically sound and must be retained.
 
 ---
 
-## 6. Participant-Created Evaluation Cases
+## 5. Participant-Created Evaluation Cases
 
 To rigorously test edge cases beyond the 32 samples, three comprehensive evaluation test cases were designed and tested against the engine.
 
 ### Test Case 1: Active Sync Pipeline Recreating Deleted Data (Replication Drift)
-- **Scenario Description:** User requests deletion. The primary database successfully drops the user record at `2026-09-10 10:00:00`. However, a legacy sync process `user_sync_worker` reads from an unpurged reporting replica and writes back to an analytics cache at `2026-09-10 10:15:00`. Audit cutoff is `2026-09-10 12:00:00`.
+- **Scenario Description:** User requests deletion. Primary database drops user record at `2026-09-10 10:00:00`. However, a legacy sync process `user_sync_worker` reads from an unpurged reporting replica and writes back to an analytics cache at `2026-09-10 10:15:00`. Audit cutoff is `2026-09-10 12:00:00`.
 - **Input Attributes:**
   - `case_id`: `custom_case_001`
   - `email`: `marcus.vance@example.net`
@@ -146,7 +123,7 @@ To rigorously test edge cases beyond the 32 samples, three comprehensive evaluat
 - **Ground Truth & Expected Output:**
   - `deletion_status`: `NOT_APPLICABLE`
   - `steps`: `[]` (empty JSON array)
-- **Justification:** Verifies the intent classification engine handles multi-lingual GDPR requests and respects explicit negation ("nicht löschen" / do not delete), preventing unauthorized account deletion.
+- **Justification:** Verifies intent classification handles multi-lingual GDPR requests and respects explicit negation ("nicht löschen" / do not delete), preventing unauthorized account deletion.
 
 ### Test Case 3: Retained Financial Record under Legal Obligation vs Prohibited Direct PII
 - **Scenario Description:** User requests full account erasure. The user has tax invoices retained under a 7-year statutory retention rule (`deletion_rules.csv` category `TAX_INVOICE` -> action `REDACT`). The billing system has an invoice `inv_2024_981` that retains transaction amount and date, but still displays the user's personal phone number and home address.
