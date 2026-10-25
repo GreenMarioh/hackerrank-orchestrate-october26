@@ -110,7 +110,8 @@ class EvidenceLinker:
         # 1. ANCHOR PHASE: Evidence observations matching aliases <= audit_at
         # -------------------------------------------------------------
         for obs in self.observations:
-            if obs.captured_at > audit_at:
+            effective_time = obs.file_captured_at or obs.captured_at
+            if effective_time > audit_at:
                 continue
 
             # Check if any field contains an alias (word-boundary safe)
