@@ -1,157 +1,100 @@
-# HackerRank Orchestrate - October 2026
+# HackerRank Orchestrate - October 2026: Ghost Data Still Exists
 
-## Ghost Data Still Exists
+An AI-powered deletion-audit engine that verifies whether personal data was actually deleted across multi-store architectures, prevents recreation via synchronization and backup pipelines, and produces fully ordered remediation and verification plans.
 
-Build an AI agent that audits whether a user's personal data was actually deleted.
-
-A deletion workflow may report **Complete** while data still exists in databases, logs, support attachments, exports, search indexes, archives, or backups. Sync and restore processes may also bring deleted data back.
-
-For each request, the agent must first determine whether deletion was actually requested. It then returns `COMPLETE`, `INCOMPLETE`, or `NOT_APPLICABLE`, reports any remaining data or recreation risk, and produces the ordered remediation and verification steps required to finish an authorized deletion safely.
-
-Read [`problem_statement.md`](./problem_statement.md) for the complete challenge contract.
+**Challenge Link:** https://wwww.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists
 
 ---
 
-## Quick Start
+## 1. Quick Start & Execution
 
-Clone the repository and move into the project directory:
+### Prerequisites
+- Python 3.10+ (Tested on Python 3.12)
+- Standard library dependencies (`sqlite3`, `csv`, `json`, `hashlib`, `re`, `dataclasses`, `pathlib`)
+- Optional for tests: `pytest`
 
+### Setup
 ```bash
+# Clone repository
 git clone https://github.com/interviewstreet/hackerrank-orchestrate-october26.git
 cd hackerrank-orchestrate-october26
+
+# Create virtual environment and install test dependencies (optional)
+python3 -m venv .venv
+# On Linux/macOS:
+source .venv/bin/activate
+# On Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+
+pip install pytest
 ```
 
-Start your AI coding tool from the **repository root** so it automatically reads [`AGENTS.md`](./AGENTS.md) and logs your session turns to `log.txt` in the root directory.
-
-Build your solution in `code/main.py`, or use another language and document its setup and run command clearly in your README.
-
-Your solution must:
-
-- Read the input files from `dataset/`
-- Generate one prediction row for every request in `dataset/deletion_requests.csv`
-- Write the final predictions to `output.csv` in the repository root
-
-Run the starter Python entry point with:
+### Running the End-to-End Pipeline
+To run the full deletion-audit pipeline and generate `output.csv` at the repository root:
 
 ```bash
 python3 code/main.py
 ```
+*(On Windows: `.venv\Scripts\python code/main.py`)*
 
-The blank template at `dataset/output.csv` is provided as a reference. Your final generated file for submission must be the root-level `output.csv`.
+This reads all 518 cases from `dataset/deletion_requests.csv`, reconciles identities and historical mutations, evaluates multi-store databases and system activity at `audit_at`, and writes `output.csv` at the root.
 
-
-## Dataset
-
-All participant-facing files are in `dataset/`:
-
-| File | Contents |
-| --- | --- |
-| `deletion_requests.csv` | 518 requests |
-| `sample_deletion_requests.csv` | 32 sample requests |
-| `sample_output.csv` | Correct sample answers |
-| `user_identities.csv` | Current user identities |
-| `user_audit_log.csv` | Historical identity changes |
-| `system_activity.csv` | Activity across services and data processes |
-| `deletion_rules.csv` | Required treatment for each data category |
-| `evidence_files.csv` | Manifest of supplied evidence files |
-| `output.csv` | Blank output template |
-
-Evidence is stored under `dataset/evidence/` and may include PDFs, images, logs, JSON, plain text, or SQL snapshot exports. SQL captures may contain a primary database, regional replicas, a reporting replica, or a failover replica so replication drift can be investigated directly. The `.sql` files are readable as text and executable with SQLite.
-
-Only `deletion_requests.csv` requires answers. The other files provide evidence and context.
-
----
-
-## Output
-
-Create `output.csv` with these columns in this exact order:
-
-```text
-case_id,deletion_status,steps_json
-```
-
-Produce exactly one row per request. `deletion_status` is `COMPLETE`, `INCOMPLETE`, or `NOT_APPLICABLE`. `steps_json` is an ordered JSON array containing findings, remediation actions, and verification checks. Use an empty array (`[]`) for `NOT_APPLICABLE`. Evidence references may be a `file_id`, `activity_id`, or `audit_id`. Determine the resource state at `audit_at` from the available evidence; reported workflow statuses and operation results are claims. Use `dataset/sample_output.csv` as the format reference.
-
-The final file must contain 518 data rows sorted by `case_id` (plus the header row). The grader parses `steps_json` as JSON, so object-key order and whitespace do not matter; array order does. Order findings, remediation, and verification in that phase order. Within a phase, follow the operation order in the problem statement, then sort by `system_id` and `resource_id`.
-
----
-
-## Evaluation
-
-`output.csv` will be compared with hidden canonical answers. Scoring considers:
-
-- deletion assessment accuracy;
-- current and historical identity resolution;
-- discovery of remaining data and recreation risks;
-- correct policy application and evidence references; and
-- completeness and ordering of remediation and verification steps.
-
-Your `code.zip` must include:
-
-```text
-code/evaluation/evaluation_report.md
-code/evaluation/usage_report.md
-```
-
-- `evaluation_report.md` must cover case, row, field, and sequence accuracy, at least three additional evaluation cases created by you, failures found, and improvements made.
-- `usage_report.md` must cover the final full-dataset run, including model providers and names, model calls, input and output tokens, total and average tokens per request, and estimated total and per-request cost. Include per-model and overall totals when using multiple models.
-
-**Important:** Place `evaluation_report.md` and `usage_report.md` inside `code/evaluation/` (matching `code/evaluation/main.py` in this starter layout), write your complete evaluation metrics, custom evaluation test cases, and token/cost breakdowns directly inside those Markdown files, and keep prompts in source code or Markdown files. Automated code evaluation ignores raw data files (`.csv`, `.tsv`, `.json`, `.jsonl`, `.sql`, `.log`), so content stored only in those formats will not be visible to the code judge or AI interviewer.
-
----
-
-## Chat Transcript
-
-This repository includes [`AGENTS.md`](./AGENTS.md), which instructs compatible AI coding tools to append conversation summaries to `log.txt` in the repository root:
-
-| Platform | Path |
-| --- | --- |
-| macOS / Linux | `<repo root>/log.txt` |
-| Windows | `<repo root>\log.txt` |
-
-- Always launch your AI coding agent from the repository root (or explicitly ask it to read `./AGENTS.md` first) so every turn is logged to `log.txt` with the required `User Prompt`, `Agent Response Summary`, `Actions`, and `Context` sections.
-- Upload `log.txt` directly as your `chat_transcript` submission on HackerRank.
-- Do not include API keys, tokens, credentials, or secrets in prompts, code, configuration, or `log.txt`.
-
----
-
-## Packaging `code.zip` and Submission
-
-| Item | Description |
-| --- | --- |
-| `code.zip` | Runnable solution, prompts, configuration, `README.md`, and `evaluation/` reports |
-| `output.csv` | One answer row for each of the 518 requests in `dataset/deletion_requests.csv` |
-| `chat_transcript` | The root `log.txt` file generated by your coding agent |
-| AI interview | Live explanation of your architecture, approach, and evaluation |
-
-You may use any programming language, model, framework, or retrieval approach. Include clear setup and execution instructions in `README.md` inside `code.zip`.
-
-To package `code.zip` from the repository root without bundling the dataset:
-
-**macOS / Linux:**
+### Validating Output Invariants
+To verify schema conformity, step numbering, phase ordering, valid operations, and pre-audit evidence citations:
 
 ```bash
-zip -r code.zip README.md code -x "*/__pycache__/*" "*/.venv/*" "*/venv/*" "*/node_modules/*" "*/.git/*" "*/.DS_Store"
+python3 code/tools/validate_output.py output.csv
 ```
 
-**Windows (PowerShell):**
+### Running Test Suite
+To run the complete unit and integration test suite:
 
-```powershell
-Compress-Archive -Path README.md, code -DestinationPath code.zip -Force
+```bash
+pytest -q
 ```
 
-When packaging `code.zip`:
+---
 
-- Keep your evaluation reports in `code/evaluation/` so they are bundled automatically with `code` (or add `evaluation` to the archive command above if you placed them in a top-level `evaluation/` directory).
-- Do **not** include `dataset/`, virtual environments (`.venv`, `venv`, `node_modules`), or build caches (`__pycache__`). On Windows, keep `.venv` at the repository root (outside `code/`) and remove any `code/__pycache__` folders before running `Compress-Archive`.
-- Do **not** include nested archives (`.zip`, `.tar`, `.gz`, `.tgz`, `.7z`, `.rar`) inside `code.zip` — submissions containing nested archive files will be rejected.
+## 2. Architecture Overview
 
-Before submitting, confirm that:
+The system is modularized under `code/ghost/`:
 
-- `output.csv` has the exact header `case_id,deletion_status,steps_json` and contains all 518 data rows sorted by `case_id`;
-- every `steps_json` value is a valid JSON array with consecutive step numbers starting at `1`;
-- findings cite valid evidence IDs, and `COMPLETE` verification steps cite evidence proving the current state;
-- proposed remediation and future verification steps use an empty `evidence_id` (`""`);
-- `code.zip` includes your runnable code, `README.md`, `code/evaluation/evaluation_report.md`, and `code/evaluation/usage_report.md`;
-- `log.txt` follows the `AGENTS.md` turn format and is uploaded to the `chat_transcript` slot; and
-- no API keys, credentials, real personal data, or sensitive configuration values are included.
+1. **`intent.py` (Intent Classifier):**  
+   Evaluates `request_text` across multiple languages (English, German, French, Spanish, Japanese, Chinese) to determine if deletion was actually authorized. Correctly classifies non-deletion requests (marketing opt-out, data export/portability, invoice retrieval, email rectification) as `NOT_APPLICABLE` with `steps_json=[]`.
+2. **`identity.py` (Historical Identity Resolver):**  
+   Reconstructs the full identity timeline for each subject using `user_identities.csv` and `user_audit_log.csv`. Matches current and historical email addresses, phone numbers, full names, usernames, and SHA-256 email hashes.
+3. **`ingest.py` (Evidence Ingestion & Pre-Indexing):**  
+   Parses `evidence_files.csv` and discovers all structured records across `dataset/evidence/` (SQLite snapshots, JSON files, text dumps, and system logs). Normalizes schema fields across heterogeneous services.
+4. **`linker.py` (Temporal Invariant Linker):**  
+   Binds evidence records to identity clusters under strict temporal cutoff invariants (`captured_at <= audit_at` and `file_captured_at <= audit_at`). Assigns multi-tier confidence levels (`HIGH` for direct entity matches; `MEDIUM` for activity references).
+5. **`rules.py` (Policy Categorization & Action Engine):**  
+   Maps resource types to policy categories defined in `deletion_rules.csv` (`ACCOUNT_PROFILE`, `MARKETING_PROFILE`, `TAX_INVOICE`, `COMMUNICATION_LOG`, `ACCOUNT_TOMBSTONE`). Determines required actions (`DELETE`, `REDACT`, `ANONYMIZE`, `RETAIN`).
+6. **`state.py` (Multi-Store Invariant State Determination):**  
+   Evaluates whether data remains across primary, regional, reporting, or failover replicas. Enforces the invariant: **if any store still holds identified data at `audit_at`, the resource remains `PRESENT`**.
+7. **`flows.py` (Active Flow & Restore Risk Detection):**  
+   Analyzes `dataset/system_activity.csv` for replication workers, sync jobs, and backup pipelines. Identifies flows that can recreate deleted records (`REPORT_ACTIVE_DATA_FLOW`, `REPORT_RESTORE_RISK`).
+8. **`planner.py` & `decision.py` (Remediation Planner & Decision Engine):**  
+   Constructs the final audit decision:
+   - `NOT_APPLICABLE`: Non-deletion requests.
+   - `COMPLETE`: All prohibited records deleted/redacted, retained records present, and no active flows. Emits evidence-backed verification steps proving the compliant state.
+   - `INCOMPLETE`: Any remaining record, unredacted PII, or active flow. Emits findings, ordered remediation steps (`DISABLE_DATA_FLOW` before `DELETE_RECORD`), and post-remediation verification checks.
+
+---
+
+## 3. Assumptions & Limitations
+
+1. **Evidence Citations:** Finding steps and `COMPLETE` verification steps strictly cite participant-visible evidence captured at or before `audit_at`. Proposed remediation and future verification steps for `INCOMPLETE` cases use `evidence_id=""`.
+2. **Confidence Gating:** Violation findings require `HIGH` confidence (direct entity match). This prevents background worker noise and decoy activity in `system_activity.csv` from generating spurious violation findings.
+3. **Image / Document OCR:** Production runtime relies on deterministic metadata and structured text/SQL evidence. Image files (`.png`) in evidence are treated via companion text manifests or activity entries unless external vision models are configured.
+4. **No Golden Shortcuts:** Production code never reads or inspects `sample_output.csv` or `sample_deletion_requests.csv`. All predictions are derived strictly from first principles and policy rules.
+
+---
+
+## 4. Deliverables & Packaging
+
+The submission package consists of:
+- `code.zip`: Contains `code/`, `evaluation/`, `README.md`, `AGENTS.md`.
+- `output.csv`: The root-level predictions file containing 518 data rows.
+- `log.txt`: The append-only transcript of agent turns.
+- `code/evaluation/evaluation_report.md`: Detailed accuracy analysis, methodology, and 3 custom test cases.
+- `code/evaluation/usage_report.md`: Computational benchmarks and zero-cost model usage summary.
